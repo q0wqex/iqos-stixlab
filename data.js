@@ -1,402 +1,150 @@
-// 5 критериев оценки дегустации (шкала 1 - 5)
-const RATING_CRITERIA = [
-  { id: "taste", name: "Приятность вкуса", icon: "👅", desc: "Насколько сам вкус приятен на рецепторах" },
-  { id: "aroma", name: "Приятность аромата", icon: "👃", desc: "Запах пара и аромат стика при нагреве" },
-  { id: "intensity", name: "Интенсивность, яркость вкуса", icon: "💥", desc: "Насыщенность, плотность и выразительность" },
-  { id: "throat", name: "Комфорт во рту и горле", icon: "🍃", desc: "Мягкость пара, отсутствие горечи и першения" },
-  { id: "aftertaste", name: "Послевкусие", icon: "✨", desc: "Ощущение во рту после затяжки и финиш вкуса" }
-];
-
-// Каталог популярных стиков для IQOS (HEETS, TEREA, FIIT)
-const INITIAL_STICKS = [
-  // --- HEETS (IQOS Originals / Duo / Solid) ---
+// База вкусов: HEETS и FIIT
+const STICKS = [
+  // --- HEETS ---
   {
     id: "heets-green-zing",
     brand: "HEETS",
-    name: "Green zing",
-    subName: "Fresh & Citrus",
+    name: "Green Zing",
     color: "#2ecc71",
-    accentColor: "#27ae60",
-    bgTint: "#d4edda",
-    category: "citrus",
-    categoryName: "Цитрусовые и пряные",
-    intensity: 4,
-    cooling: 4,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Яркий мятный, освежающий цитрусово-травяной бленд с нотами лайма.",
-    notes: ["Лайм", "Мята", "Освежающий"]
-  },
-  {
-    id: "heets-summer-breeze",
-    brand: "HEETS",
-    name: "Summer breeze",
-    subName: "Warm & Fruity",
-    color: "#e67e22",
-    accentColor: "#f39c12",
-    bgTint: "#ffeaa7",
-    category: "berry",
-    categoryName: "Ягодные и фруктовые",
-    intensity: 4,
-    cooling: 3,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Мягкий летний фруктовый вкус с персиковыми нотами и деликатным холодком.",
-    notes: ["Персик", "Цветы", "Легкий ментол"]
-  },
-  {
-    id: "heets-cameo-wave",
-    brand: "HEETS",
-    name: "Cameo wave",
-    subName: "Aromatic Wave",
-    color: "#e056fd",
-    accentColor: "#be2edd",
-    bgTint: "#f8a5c2",
-    category: "berry",
-    categoryName: "Ягодные и фруктовые",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Насыщенный ароматный бленд со сладковатыми нотами экзотических ягод и прохладой.",
-    notes: ["Спелые ягоды", "Сладость", "Мягкий холодок"]
-  },
-  {
-    id: "heets-bronze",
-    brand: "HEETS",
-    name: "Bronze selection",
-    subName: "Rich & Warm",
-    color: "#8d5b4c",
-    accentColor: "#5c3d2e",
-    bgTint: "#d7ccc8",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 5,
-    cooling: 0,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Глубокий бархатистый табак с теплыми нотами какао и подсушенных сухофруктов.",
-    notes: ["Какао", "Шоколад", "Глубокий табак"]
+    desc: "Освежающий травяной бленд с нотами лайма и мяты",
+    tag: "Цитрус / Мята"
   },
   {
     id: "heets-purple-wave",
     brand: "HEETS",
-    name: "Purple wave",
-    subName: "Berry & Cooling",
-    color: "#9b59b6",
-    accentColor: "#8e44ad",
-    bgTint: "#e8d5f5",
-    category: "berry",
-    categoryName: "Ягодные и фруктовые",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Сочные лесные ягоды с бодрящим ментоловым охлаждающим послевкусием.",
-    notes: ["Черника", "Лесные ягоды", "Ментол"]
-  },
-  {
-    id: "heets-turquoise",
-    brand: "HEETS",
-    name: "Turquoise selection",
-    subName: "Fresh Menthol",
-    color: "#00cec9",
-    accentColor: "#0984e3",
-    bgTint: "#dff9fb",
-    category: "menthol",
-    categoryName: "Свежесть и ментол",
-    intensity: 3,
-    cooling: 5,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Освежающий табачный бленд с выраженной прохладой перечной мяты.",
-    notes: ["Мята", "Ледяной ментол", "Свежесть"]
-  },
-  {
-    id: "heets-green-selection",
-    brand: "HEETS",
-    name: "Green selection",
-    subName: "Intense Menthol",
-    color: "#10ac84",
-    accentColor: "#1dd1a1",
-    bgTint: "#c8f7dc",
-    category: "menthol",
-    categoryName: "Свежесть и ментол",
-    intensity: 4,
-    cooling: 5,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Интенсивный ментоловый аромат с глубокой табачной основой для любителей свежести.",
-    notes: ["Сильный ментол", "Эвкалипт", "Плотный пар"]
+    name: "Purple Wave",
+    color: "#8e44ad",
+    desc: "Спелые лесные ягоды с освежающим ментолом",
+    tag: "Ягоды / Холодок"
   },
   {
     id: "heets-amber",
     brand: "HEETS",
-    name: "Amber selection",
-    subName: "Classic Balanced",
+    name: "Amber Selection",
+    color: "#f39c12",
+    desc: "Классический табачный бленд с древесно-ореховыми нотами",
+    tag: "Табак"
+  },
+  {
+    id: "heets-summer-breeze",
+    brand: "HEETS",
+    name: "Summer Breeze",
     color: "#e67e22",
-    accentColor: "#f39c12",
-    bgTint: "#fdebd0",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 4,
-    cooling: 0,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Сбалансированный мягкий табачный бленд с приятными древесными полутонами.",
-    notes: ["Древесные ноты", "Орехи", "Теплый табак"]
+    desc: "Мягкий персиково-фруктовый вкус с легким холодком",
+    tag: "Фрукты / Ментол"
   },
   {
-    id: "heets-slate",
+    id: "heets-bronze",
     brand: "HEETS",
-    name: "Slate selection",
-    subName: "Smooth & Refined",
-    color: "#747d8c",
-    accentColor: "#57606f",
-    bgTint: "#e4e7eb",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 3,
-    cooling: 0,
-    aroma: 3,
-    hasCapsule: false,
-    description: "Мягкий деликатный табак со сдержанным пряным послевкусием без резкости.",
-    notes: ["Мягкий табак", "Нейтральный", "Тонкий аромат"]
+    name: "Bronze Selection",
+    color: "#8d5b4c",
+    desc: "Насыщенный табак с бархатными нотами какао и сухофруктов",
+    tag: "Табак"
   },
   {
-    id: "heets-sun",
+    id: "heets-turquoise",
     brand: "HEETS",
-    name: "HEETS SUN с капсулой",
-    subName: "Tropical Capsule",
-    color: "#eb4d4b",
-    accentColor: "#ff7979",
-    bgTint: "#ffcccc",
-    category: "capsule",
-    categoryName: "С капсулой",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: true,
-    description: "Яркий летний бленд: при нажатии капсулы раскрывается взрывной микс тропических фруктов и ментола.",
-    notes: ["Тропики", "Кнопка/Капсула", "Манго-персик", "Прохлада"]
+    name: "Turquoise Selection",
+    color: "#00b894",
+    desc: "Освежающий ментол и деликатная прохладная мята",
+    tag: "Ментол"
   },
   {
     id: "heets-yellow",
     brand: "HEETS",
-    name: "Yellow selection",
-    subName: "Smooth & Zesty",
+    name: "Yellow Selection",
     color: "#f1c40f",
-    accentColor: "#f39c12",
-    bgTint: "#fef9e7",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 3,
-    cooling: 0,
-    aroma: 3,
-    hasCapsule: false,
-    description: "Легкий табачный вкус со сдержанным пряно-цитрусовым оттенком.",
-    notes: ["Светлый табак", "Цитрусовый намек"]
+    desc: "Мягкий светлый табак с цитрусовым оттенком",
+    tag: "Табак"
   },
   {
     id: "heets-silver",
     brand: "HEETS",
-    name: "Silver selection",
-    subName: "Refined & Subtle",
+    name: "Silver Selection",
     color: "#95a5a6",
-    accentColor: "#bdc3c7",
-    bgTint: "#f2f4f4",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 2,
-    cooling: 0,
-    aroma: 2,
-    hasCapsule: false,
-    description: "Самый деликатный, ультралегкий табак для тех, кто любит мягкость.",
-    notes: ["Мягкий табак", "Деликатный"]
+    desc: "Очень легкий, нейтральный и утонченный табачный вкус",
+    tag: "Табак"
+  },
+  {
+    id: "heets-tropical-swift",
+    brand: "HEETS",
+    name: "Tropical Swift",
+    color: "#ff7675",
+    desc: "Сочные тропические фрукты с мягким ментолом",
+    tag: "Тропики / Мята"
+  },
+  {
+    id: "heets-ruby-fuse",
+    brand: "HEETS",
+    name: "Ruby Fuse",
+    color: "#d63031",
+    desc: "Красные садовые ягоды с цветочным шлейфом",
+    tag: "Ягоды"
+  },
+  {
+    id: "heets-cameo-wave",
+    brand: "HEETS",
+    name: "Cameo Wave",
+    color: "#e056fd",
+    desc: "Сладкие ягоды с нежным ментоловым послевкусием",
+    tag: "Ягоды / Ментол"
+  },
+  {
+    id: "heets-sun-pearl",
+    brand: "HEETS",
+    name: "Sun Pearl (Кнопка)",
+    color: "#ff6b6b",
+    desc: "С капсулой: яркий арбузно-мятный взрыв вкуса",
+    tag: "Капсула / Арбуз"
   },
 
-  // --- TEREA (IQOS ILUMA) ---
-  {
-    id: "terea-amber",
-    brand: "TEREA",
-    name: "Amber",
-    subName: "Selection",
-    color: "#e67e22",
-    accentColor: "#f39c12",
-    bgTint: "#fdebd0",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 4,
-    cooling: 0,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Мягкий и насыщенный древесно-ореховый табачный бленд для IQOS ILUMA.",
-    notes: ["Орехи", "Древесные ноты", "Теплый табак"]
-  },
-  {
-    id: "terea-bronze",
-    brand: "TEREA",
-    name: "Bronze",
-    subName: "Selection",
-    color: "#8d5b4c",
-    accentColor: "#a0522d",
-    bgTint: "#d7ccc8",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 4,
-    cooling: 0,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Насыщенный темный табак с бархатными нотами какао и сухофруктов.",
-    notes: ["Какао", "Сухофрукты", "Глубокий табак"]
-  },
-  {
-    id: "terea-purple-wave",
-    brand: "TEREA",
-    name: "Purple Wave",
-    subName: "Aromatic",
-    color: "#8e44ad",
-    accentColor: "#9b59b6",
-    bgTint: "#e8d5f5",
-    category: "berry",
-    categoryName: "Ягодные и фруктовые",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Хит для двоих: спелые лесные ягоды с освежающим холодком.",
-    notes: ["Лесные ягоды", "Черника", "Ментол"]
-  },
-  {
-    id: "terea-oasis-pearl",
-    brand: "TEREA",
-    name: "Oasis Pearl",
-    subName: "Capsule Edition",
-    color: "#e17055",
-    accentColor: "#fab1a0",
-    bgTint: "#ffeaa7",
-    category: "capsule",
-    categoryName: "С капсулой",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: true,
-    description: "Капсула взрывается экзотическим вкусом маракуйи, сочного персика и прохлады.",
-    notes: ["Маракуйя", "Персик", "Освежающая капсула"]
-  },
-  {
-    id: "terea-green-zing",
-    brand: "TEREA",
-    name: "Green Zing",
-    subName: "Fresh & Citrus",
-    color: "#27ae60",
-    accentColor: "#2ecc71",
-    bgTint: "#d4edda",
-    category: "citrus",
-    categoryName: "Цитрусовые и пряные",
-    intensity: 4,
-    cooling: 4,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Бодрящий микс зеленого чая, лайма и легких пряных трав с ментолом.",
-    notes: ["Лайм", "Зеленый чай", "Травы"]
-  },
-
-  // --- FIIT (lil Solid) ---
+  // --- FIIT ---
   {
     id: "fiit-viola",
     brand: "FIIT",
     name: "Viola",
-    subName: "Berry Fresh",
     color: "#9b59b6",
-    accentColor: "#8e44ad",
-    bgTint: "#e8d5f5",
-    category: "berry",
-    categoryName: "Ягодные и фруктовые",
-    intensity: 4,
-    cooling: 4,
-    aroma: 5,
-    hasCapsule: false,
-    description: "Яркий вкус спелой черники и ежевики с приятным холодком.",
-    notes: ["Черника", "Ежевика", "Мята"]
+    desc: "Сладкие садовые ягоды с освежающим холодком",
+    tag: "Ягоды / Свежесть"
   },
   {
     id: "fiit-crisp",
     brand: "FIIT",
     name: "Crisp",
-    subName: "Fresh & Citrus",
-    color: "#2ecc71",
-    accentColor: "#27ae60",
-    bgTint: "#d4edda",
-    category: "citrus",
-    categoryName: "Цитрусовые и пряные",
-    intensity: 3,
-    cooling: 4,
-    aroma: 4,
-    hasCapsule: false,
-    description: "Освежающий вкус с нотами пряных трав и сочного цитруса.",
-    notes: ["Лимон-лайм", "Пряные травы", "Ментол"]
+    color: "#27ae60",
+    desc: "Пряный цитрусово-травяной бленд с бодрящей прохладой",
+    tag: "Цитрус / Травы"
   },
   {
     id: "fiit-regular",
     brand: "FIIT",
     name: "Regular",
-    subName: "Classic",
-    color: "#3498db",
-    accentColor: "#2980b9",
-    bgTint: "#dff9fb",
-    category: "tobacco",
-    categoryName: "Классический табак",
-    intensity: 4,
-    cooling: 0,
-    aroma: 3,
-    hasCapsule: false,
-    description: "Простой чистый табачный вкус с легким ореховым оттенком.",
-    notes: ["Классический табак", "Ореховый шлейф"]
+    color: "#e67e22",
+    desc: "Чистый классический табачный вкус с легким ореховым оттенком",
+    tag: "Табак"
+  },
+  {
+    id: "fiit-marine",
+    brand: "FIIT",
+    name: "Marine",
+    color: "#1abc9c",
+    desc: "Бодрящий морской ментол с выраженным ледяным ощущением",
+    tag: "Ментол"
+  },
+  {
+    id: "fiit-spring",
+    brand: "FIIT",
+    name: "Spring",
+    color: "#fd79a8",
+    desc: "Фруктово-цветочный весенний бленд с мягкой свежестью",
+    tag: "Цветы / Фрукты"
+  },
+  {
+    id: "fiit-tropic",
+    brand: "FIIT",
+    name: "Tropic",
+    color: "#f39c12",
+    desc: "Тропический фруктовый коктейль с мягким послевкусием",
+    tag: "Тропики"
   }
 ];
-
-// Дефолтные настройки профилей пары (Андрей и Катя)
-const DEFAULT_USER1 = {
-  name: "Андрей",
-  shortName: "Андрюша",
-  avatar: "🧔‍♂️",
-  color: "#f39c12", // Персиковый / теплый оттенок как в таблице
-  bgTint: "#fdebd0"
-};
-
-const DEFAULT_USER2 = {
-  name: "Катя",
-  shortName: "Катюша",
-  avatar: "👩‍🦰",
-  color: "#e84393", // Розовый оттенок как в таблице
-  bgTint: "#ffd3e2"
-};
-
-// Начальные данные оценок (включая Green zing из примера пользователя)
-const INITIAL_RATINGS = {
-  "heets-green-zing": {
-    u1: {
-      taste: 4,
-      aroma: 3,
-      intensity: 4,
-      throat: 5,
-      aftertaste: 5,
-      total: 4.2,
-      verdict: "love",
-      notes: "Освежающий, комфортный для горла"
-    },
-    u2: {
-      taste: 4,
-      aroma: 4,
-      intensity: 5,
-      throat: 5,
-      aftertaste: 5,
-      total: 4.6,
-      verdict: "love",
-      notes: "Очень яркий мятный вкус!"
-    },
-    mutualTotal: 4.4,
-    updatedAt: new Date().toISOString()
-  }
-};
