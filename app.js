@@ -1,29 +1,37 @@
 // ===================================================
-// STIX LAB — Application Logic
-// Couple tasting & evaluation for IQOS sticks
+// STIX LAB — Application Logic with 5 Criteria
+// Tasting & Evaluation for Andrey & Katya
 // ===================================================
 
 const STORAGE_KEYS = {
-  STICKS: "stixlab_sticks_v1",
-  RATINGS: "stixlab_ratings_v1",
-  USER1: "stixlab_user1_v1",
-  USER2: "stixlab_user2_v1"
+  STICKS: "stixlab_sticks_v2",
+  RATINGS: "stixlab_ratings_v2",
+  USER1: "stixlab_user1_v2",
+  USER2: "stixlab_user2_v2"
 };
 
 // Global State
 let state = {
   sticks: [],
-  ratings: {}, // key: stickId -> { u1Score, u1Verdict, u1Notes, u2Score, u2Verdict, u2Notes, date }
+  ratings: {}, // key: stickId -> { u1: { taste, aroma, intensity, throat, aftertaste, total, verdict, notes }, u2: { ... }, mutualTotal }
   user1: { ...DEFAULT_USER1 },
   user2: { ...DEFAULT_USER2 },
-  activeTab: "catalog",
+  activeTab: "sheet",
+  sheetBrandFilter: "HEETS",
+  selectedStickIdForInspect: "heets-green-zing",
   currentFilterBrand: "ALL",
   currentFilterCategory: "ALL",
   currentFilterStatus: "ALL",
   searchQuery: "",
   sortBy: "mutual",
   activeRatingStickId: null,
-  activeBlindStickId: null
+  activeBlindStickId: null,
+
+  // Temporary criteria state in rating modal
+  modalRatingState: {
+    u1: { taste: 4, aroma: 3, intensity: 4, throat: 5, aftertaste: 5 },
+    u2: { taste: 4, aroma: 4, intensity: 5, throat: 5, aftertaste: 5 }
+  }
 };
 
 // ================= INITIALIZATION =================
@@ -33,6 +41,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUserInterfaceLabels();
   renderCurrentTab();
   updateHeaderStats();
+
+  // Initial selection for inspection card
+  if (!state.selectedStickIdForInspect && state.sticks.length > 0) {
+    state.selectedStickIdForInspect = state.sticks[0].id;
+  }
+  renderInspectCard(state.selectedStickIdForInspect);
 });
 
 function loadState() {
@@ -48,21 +62,21 @@ function loadState() {
     const savedRatings = localStorage.getItem(STORAGE_KEYS.RATINGS);
     if (savedRatings) {
       state.ratings = JSON.parse(savedRatings);
+    } else {
+      // Use initial demo ratings (Green zing from user's table)
+      state.ratings = { ...INITIAL_RATINGS };
+      saveRatings();
     }
 
     const savedU1 = localStorage.getItem(STORAGE_KEYS.USER1);
-    if (savedU1) {
-      state.user1 = JSON.parse(savedU1);
-    }
+    if (savedU1) state.user1 = JSON.parse(savedU1);
 
     const savedU2 = localStorage.getItem(STORAGE_KEYS.USER2);
-    if (savedU2) {
-      state.user2 = JSON.parse(savedU2);
-    }
+    if (savedU2) state.user2 = JSON.parse(savedU2);
   } catch (err) {
     console.error("Error loading state:", err);
     state.sticks = [...INITIAL_STICKS];
-    state.ratings = {};
+    state.ratings = { ...INITIAL_RATINGS };
   }
 }
 
@@ -95,6 +109,23 @@ function initEventListeners() {
     });
   });
 
+  // Spreadsheet brand filter buttons
+  document.querySelectorAll(".sheet-brand-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sheet-brand-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.sheetBrandFilter = btn.getAttribute("data-sheet-brand");
+      renderSpreadsheetView();
+    });
+  });
+
+  // Edit rating from inspection card
+  document.getElementById("btnInspectEditRate").addEventListener("click", () => {
+    if (state.selectedStickIdForInspect) {
+      openRateModal(state.selectedStickIdForInspect);
+    }
+  });
+
   // Search
   const searchInput = document.getElementById("searchInput");
   const clearSearchBtn = document.getElementById("clearSearchBtn");
@@ -111,7 +142,7 @@ function initEventListeners() {
     renderSticksGrid();
   });
 
-  // Brand Filter Pills
+  // Brand Filter Pills in Cards
   document.querySelectorAll("#brandPills .pill").forEach(pill => {
     pill.addEventListener("click", () => {
       document.querySelectorAll("#brandPills .pill").forEach(p => p.classList.remove("active"));
@@ -149,6 +180,7 @@ function initEventListeners() {
 
   // Modals Open
   document.getElementById("btnAddNewStick").addEventListener("click", () => openModal("addStickModal"));
+  document.getElementById("btnAddNewStickFromSheet").addEventListener("click", () => openModal("addStickModal"));
   document.getElementById("btnSettings").addEventListener("click", () => openSettingsModal());
   document.getElementById("coupleProfilesBar").addEventListener("click", () => openSettingsModal());
   document.getElementById("btnRoulette").addEventListener("click", () => openRouletteModal());
@@ -162,18 +194,6 @@ function initEventListeners() {
   document.getElementById("closeBlindModal").addEventListener("click", () => closeModal("blindTestModal"));
   document.getElementById("closeRouletteModal").addEventListener("click", () => closeModal("rouletteModal"));
   document.getElementById("closeSettingsModal").addEventListener("click", () => closeModal("settingsModal"));
-
-  // Sliders input in rating modal
-  const u1Range = document.getElementById("u1ScoreRange");
-  const u2Range = document.getElementById("u2ScoreRange");
-  u1Range.addEventListener("input", (e) => {
-    document.getElementById("u1ScoreDisplay").textContent = e.target.value;
-    updateModalMutualAvg();
-  });
-  u2Range.addEventListener("input", (e) => {
-    document.getElementById("u2ScoreDisplay").textContent = e.target.value;
-    updateModalMutualAvg();
-  });
 
   // Save Rating
   document.getElementById("btnSaveRate").addEventListener("click", saveStickRating);
@@ -205,14 +225,6 @@ function initEventListeners() {
   // Export Leaderboard / Wishlist to clipboard
   document.getElementById("btnExportLeaderboard").addEventListener("click", copyLeaderboardToClipboard);
   document.getElementById("btnShareWishlist").addEventListener("click", copyWishlistToClipboard);
-
-  // Sliders in add custom stick
-  document.getElementById("newStickIntensity").addEventListener("input", (e) => {
-    document.getElementById("newIntensityVal").textContent = e.target.value;
-  });
-  document.getElementById("newStickCooling").addEventListener("input", (e) => {
-    document.getElementById("newCoolingVal").textContent = e.target.value;
-  });
 }
 
 // ================= MODAL HELPERS =================
@@ -234,37 +246,46 @@ function closeModal(modalId) {
 
 // ================= UI LABELS UPDATE =================
 function updateUserInterfaceLabels() {
+  const u1Name = state.user1.name || "Андрей";
+  const u1Short = state.user1.shortName || "Андрюша";
+  const u2Name = state.user2.name || "Катя";
+  const u2Short = state.user2.shortName || "Катюша";
+
   // Header chips
   document.getElementById("u1Avatar").textContent = state.user1.avatar;
-  document.getElementById("u1Name").textContent = state.user1.name;
+  document.getElementById("u1Name").textContent = u1Name;
   document.getElementById("u2Avatar").textContent = state.user2.avatar;
-  document.getElementById("u2Name").textContent = state.user2.name;
+  document.getElementById("u2Name").textContent = u2Name;
 
-  // Rate Modal labels
+  // Sheet table headers
+  document.getElementById("sheetThU1").textContent = u1Name;
+  document.getElementById("sheetThU2").textContent = u2Name;
+
+  // Inspect card user headers
+  document.getElementById("inspectU1Header").textContent = u1Short;
+  document.getElementById("inspectU2Header").textContent = u2Short;
+
+  // Modal headers
   document.getElementById("modalU1Avatar").textContent = state.user1.avatar;
-  document.getElementById("modalU1Name").textContent = state.user1.name;
+  document.getElementById("modalU1Name").textContent = u1Short;
   document.getElementById("modalU2Avatar").textContent = state.user2.avatar;
-  document.getElementById("modalU2Name").textContent = state.user2.name;
+  document.getElementById("modalU2Name").textContent = u2Short;
 
   // Leaderboard column labels
   document.getElementById("leadU1Avatar").textContent = state.user1.avatar;
-  document.getElementById("leadU1Title").textContent = `Топ ${state.user1.name}`;
+  document.getElementById("leadU1Title").textContent = `Топ ${u1Name}`;
   document.getElementById("leadU2Avatar").textContent = state.user2.avatar;
-  document.getElementById("leadU2Title").textContent = `Топ ${state.user2.name}`;
+  document.getElementById("leadU2Title").textContent = `Топ ${u2Name}`;
 
-  document.getElementById("thU1Name").textContent = `${state.user1.avatar} ${state.user1.name}`;
-  document.getElementById("thU2Name").textContent = `${state.user2.avatar} ${state.user2.name}`;
-
-  // Sort labels
-  const u1Sort = document.querySelector(".u1-label-sort");
-  if (u1Sort) u1Sort.textContent = state.user1.name;
-  const u2Sort = document.querySelector(".u2-label-sort");
-  if (u2Sort) u2Sort.textContent = state.user2.name;
+  document.getElementById("thU1Name").textContent = `${state.user1.avatar} ${u1Name}`;
+  document.getElementById("thU2Name").textContent = `${state.user2.avatar} ${u2Name}`;
 }
 
 // ================= TAB SWITCHING =================
 function renderCurrentTab() {
-  if (state.activeTab === "catalog") {
+  if (state.activeTab === "sheet") {
+    renderSpreadsheetView();
+  } else if (state.activeTab === "catalog") {
     renderSticksGrid();
   } else if (state.activeTab === "leaderboard") {
     renderLeaderboard();
@@ -277,14 +298,14 @@ function renderCurrentTab() {
 
 // ================= HEADER STATS =================
 function updateHeaderStats() {
-  const ratedCountU1 = Object.values(state.ratings).filter(r => r.u1Score > 0).length;
-  const ratedCountU2 = Object.values(state.ratings).filter(r => r.u2Score > 0).length;
+  const ratedCountU1 = Object.values(state.ratings).filter(r => r.u1 && r.u1.total > 0).length;
+  const ratedCountU2 = Object.values(state.ratings).filter(r => r.u2 && r.u2.total > 0).length;
 
   document.getElementById("u1Count").textContent = ratedCountU1;
   document.getElementById("u2Count").textContent = ratedCountU2;
 
   // Wishlist count
-  const wishlistCount = Object.values(state.ratings).filter(r => r.u1Verdict === "love" || r.u2Verdict === "love").length;
+  const wishlistCount = Object.values(state.ratings).filter(r => (r.u1 && r.u1.verdict === "love") || (r.u2 && r.u2.verdict === "love")).length;
   document.getElementById("reorderCount").textContent = wishlistCount;
 
   // Mutual match calculation
@@ -300,7 +321,262 @@ function updateHeaderStats() {
   document.getElementById("catalogTotalBadge").textContent = state.sticks.length;
 }
 
-// ================= RENDER STICKS GRID =================
+// ================= TAB 1: SPREADSHEET VIEW =================
+function renderSpreadsheetView() {
+  const tbody = document.getElementById("excelTableBody");
+  
+  let sticks = state.sticks;
+  if (state.sheetBrandFilter !== "ALL") {
+    sticks = sticks.filter(s => s.brand === state.sheetBrandFilter);
+  }
+
+  if (sticks.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">
+          Нет стиков в выбранной категории
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = sticks.map(stick => {
+    const r = state.ratings[stick.id] || {};
+    const u1Total = r.u1?.total ? formatDecimal(r.u1.total) : "";
+    const u2Total = r.u2?.total ? formatDecimal(r.u2.total) : "";
+    const mutual = r.mutualTotal ? formatDecimal(r.mutualTotal) : "";
+
+    const isSelected = stick.id === state.selectedStickIdForInspect;
+    const selectedClass = isSelected ? "selected-row" : "";
+
+    // Badge styling matching the stick color or spreadsheet style
+    const badgeStyle = `background: ${stick.bgTint || 'rgba(255,255,255,0.08)'}; color: ${getTextColorForBg(stick.bgTint || '#1e293b')}; border-left: 5px solid ${stick.color};`;
+
+    return `
+      <tr class="${selectedClass}" onclick="selectStickForInspect('${stick.id}')">
+        <td>
+          <span class="stick-badge-pill" style="${badgeStyle}">
+            ${escapeHtml(stick.name)}
+          </span>
+        </td>
+        <td>${escapeHtml(stick.description || '')}</td>
+        <td class="cell-score score-u2">${u2Total}</td>
+        <td class="cell-score score-u1">${u1Total}</td>
+        <td class="cell-score score-total">${mutual}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function selectStickForInspect(stickId) {
+  state.selectedStickIdForInspect = stickId;
+  renderSpreadsheetView();
+  renderInspectCard(stickId);
+}
+
+function renderInspectCard(stickId) {
+  const stick = state.sticks.find(s => s.id === stickId);
+  if (!stick) return;
+
+  const r = state.ratings[stickId] || {};
+
+  // Header
+  const headerElem = document.getElementById("inspectStickHeader");
+  headerElem.style.background = stick.bgTint || "#d4edda";
+  headerElem.style.color = getTextColorForBg(stick.bgTint || "#d4edda");
+  document.getElementById("inspectStickName").textContent = stick.name;
+
+  // Andrey (u1)
+  const u1Body = document.getElementById("inspectU1Body");
+  u1Body.innerHTML = RATING_CRITERIA.map(crit => {
+    const val = r.u1?.[crit.id] ?? "—";
+    return `
+      <tr>
+        <td>${crit.name}</td>
+        <td style="text-align: right; font-weight: 700; font-family: var(--font-mono);">${val}</td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("inspectU1Total").textContent = r.u1?.total ? formatDecimal(r.u1.total) : "—";
+
+  // Katya (u2)
+  const u2Body = document.getElementById("inspectU2Body");
+  u2Body.innerHTML = RATING_CRITERIA.map(crit => {
+    const val = r.u2?.[crit.id] ?? "—";
+    return `
+      <tr>
+        <td>${crit.name}</td>
+        <td style="text-align: right; font-weight: 700; font-family: var(--font-mono);">${val}</td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("inspectU2Total").textContent = r.u2?.total ? formatDecimal(r.u2.total) : "—";
+
+  // Mutual Total
+  document.getElementById("inspectMutualTotal").textContent = r.mutualTotal ? formatDecimal(r.mutualTotal) : "—";
+}
+
+// ================= 5-CRITERIA RATING MODAL =================
+function openRateModal(stickId) {
+  const stick = state.sticks.find(s => s.id === stickId);
+  if (!stick) return;
+
+  state.activeRatingStickId = stickId;
+  const rating = state.ratings[stickId] || {};
+
+  // Header info
+  document.getElementById("modalStickBrand").textContent = stick.brand;
+  document.getElementById("modalStickTitle").textContent = stick.name;
+  document.getElementById("modalStickDesc").textContent = stick.description || "";
+
+  // Initialize modal state
+  state.modalRatingState = {
+    u1: {
+      taste: rating.u1?.taste ?? 4,
+      aroma: rating.u1?.aroma ?? 3,
+      intensity: rating.u1?.intensity ?? 4,
+      throat: rating.u1?.throat ?? 4,
+      aftertaste: rating.u1?.aftertaste ?? 4
+    },
+    u2: {
+      taste: rating.u2?.taste ?? 4,
+      aroma: rating.u2?.aroma ?? 4,
+      intensity: rating.u2?.intensity ?? 4,
+      throat: rating.u2?.throat ?? 4,
+      aftertaste: rating.u2?.aftertaste ?? 4
+    }
+  };
+
+  // Render 5 criteria buttons for User 1
+  renderModalCriteriaInputs("u1", "u1CriteriaInputs");
+
+  // Render 5 criteria buttons for User 2
+  renderModalCriteriaInputs("u2", "u2CriteriaInputs");
+
+  // Verdicts & comments
+  setRadioValue("u1Verdict", rating.u1?.verdict || "love");
+  document.getElementById("u1Notes").value = rating.u1?.notes || "";
+
+  setRadioValue("u2Verdict", rating.u2?.verdict || "love");
+  document.getElementById("u2Notes").value = rating.u2?.notes || "";
+
+  updateModalScoresCalculation();
+  openModal("rateModal");
+}
+
+function renderModalCriteriaInputs(userKey, containerId) {
+  const container = document.getElementById(containerId);
+  const values = state.modalRatingState[userKey];
+
+  container.innerHTML = RATING_CRITERIA.map(crit => {
+    const curVal = values[crit.id];
+    return `
+      <div class="criterion-item">
+        <div class="criterion-label-row">
+          <span class="criterion-name">${crit.icon} ${crit.name}</span>
+          <span class="criterion-val-badge" id="${userKey}_${crit.id}_badge">${curVal}</span>
+        </div>
+        <div class="criterion-btn-group">
+          ${[1, 2, 3, 4, 5].map(num => `
+            <button type="button" class="crit-btn ${num === curVal ? 'active' : ''}" 
+              onclick="setCriterionScore('${userKey}', '${crit.id}', ${num})">
+              ${num}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function setCriterionScore(userKey, criterionId, score) {
+  state.modalRatingState[userKey][criterionId] = score;
+
+  // Update badge
+  const badge = document.getElementById(`${userKey}_${criterionId}_badge`);
+  if (badge) badge.textContent = score;
+
+  // Update active button state
+  const container = document.getElementById(`${userKey}CriteriaInputs`);
+  const critItem = container.querySelectorAll(".criterion-item")[RATING_CRITERIA.findIndex(c => c.id === criterionId)];
+  if (critItem) {
+    critItem.querySelectorAll(".crit-btn").forEach((btn, idx) => {
+      btn.classList.toggle("active", idx + 1 === score);
+    });
+  }
+
+  updateModalScoresCalculation();
+}
+
+function updateModalScoresCalculation() {
+  const u1Values = Object.values(state.modalRatingState.u1);
+  const u1Avg = (u1Values.reduce((a, b) => a + b, 0) / u1Values.length);
+  document.getElementById("u1CriteriaTotal").textContent = formatDecimal(u1Avg);
+
+  const u2Values = Object.values(state.modalRatingState.u2);
+  const u2Avg = (u2Values.reduce((a, b) => a + b, 0) / u2Values.length);
+  document.getElementById("u2CriteriaTotal").textContent = formatDecimal(u2Avg);
+
+  const mutualAvg = (u1Avg + u2Avg) / 2;
+  document.getElementById("modalMutualAvg").textContent = formatDecimal(mutualAvg);
+}
+
+function saveStickRating() {
+  if (!state.activeRatingStickId) return;
+
+  const u1Values = state.modalRatingState.u1;
+  const u1Total = parseFloat((Object.values(u1Values).reduce((a, b) => a + b, 0) / 5).toFixed(1));
+  const u1Verdict = getRadioValue("u1Verdict") || "love";
+  const u1Notes = document.getElementById("u1Notes").value.trim();
+
+  const u2Values = state.modalRatingState.u2;
+  const u2Total = parseFloat((Object.values(u2Values).reduce((a, b) => a + b, 0) / 5).toFixed(1));
+  const u2Verdict = getRadioValue("u2Verdict") || "love";
+  const u2Notes = document.getElementById("u2Notes").value.trim();
+
+  const mutualTotal = parseFloat(((u1Total + u2Total) / 2).toFixed(1));
+
+  state.ratings[state.activeRatingStickId] = {
+    u1: {
+      ...u1Values,
+      total: u1Total,
+      verdict: u1Verdict,
+      notes: u1Notes
+    },
+    u2: {
+      ...u2Values,
+      total: u2Total,
+      verdict: u2Verdict,
+      notes: u2Notes
+    },
+    mutualTotal,
+    updatedAt: new Date().toISOString()
+  };
+
+  saveRatings();
+  closeModal("rateModal");
+  updateHeaderStats();
+  renderCurrentTab();
+  if (state.selectedStickIdForInspect === state.activeRatingStickId) {
+    renderInspectCard(state.activeRatingStickId);
+  }
+  showToast("Оценка по критериям сохранена! ✨");
+}
+
+function setRadioValue(name, value) {
+  const radios = document.querySelectorAll(`input[name="${name}"]`);
+  radios.forEach(r => {
+    r.checked = (r.value === value);
+  });
+}
+
+function getRadioValue(name) {
+  const checked = document.querySelector(`input[name="${name}"]:checked`);
+  return checked ? checked.value : null;
+}
+
+// ================= TAB 2: CARDS CATALOG =================
 function renderSticksGrid() {
   const grid = document.getElementById("sticksGrid");
   const filtered = getFilteredAndSortedSticks();
@@ -319,24 +595,15 @@ function renderSticksGrid() {
   }
 
   grid.innerHTML = filtered.map(stick => {
-    const rating = state.ratings[stick.id];
-    const u1Score = rating?.u1Score ?? null;
-    const u2Score = rating?.u2Score ?? null;
+    const r = state.ratings[stick.id] || {};
+    const u1 = r.u1;
+    const u2 = r.u2;
 
-    let mutualAvgDisplay = "--";
-    if (u1Score !== null && u2Score !== null && (u1Score > 0 || u2Score > 0)) {
-      const avg = ((u1Score + u2Score) / 2).toFixed(1);
-      mutualAvgDisplay = avg.endsWith(".0") ? avg.slice(0, -2) : avg;
-    } else if (u1Score !== null && u1Score > 0) {
-      mutualAvgDisplay = `${u1Score}*`;
-    } else if (u2Score !== null && u2Score > 0) {
-      mutualAvgDisplay = `${u2Score}*`;
-    }
+    const u1ScoreDisplay = u1?.total ? formatDecimal(u1.total) : "—";
+    const u2ScoreDisplay = u2?.total ? formatDecimal(u2.total) : "—";
+    const mutualDisplay = r.mutualTotal ? formatDecimal(r.mutualTotal) : "—";
 
-    const u1VerdictTag = getVerdictBadgeHtml(rating?.u1Verdict);
-    const u2VerdictTag = getVerdictBadgeHtml(rating?.u2Verdict);
-
-    const hasRated = (u1Score !== null && u1Score > 0) || (u2Score !== null && u2Score > 0);
+    const hasRated = !!(u1?.total || u2?.total);
 
     return `
       <div class="stick-card" style="--stick-color: ${stick.color};">
@@ -359,55 +626,34 @@ function renderSticksGrid() {
           <div class="stick-tags">
             ${(stick.notes || []).map(note => `<span class="note-tag">#${escapeHtml(note)}</span>`).join("")}
           </div>
-
-          <div class="stick-meters-row">
-            <div class="meter-col">
-              <div class="meter-meta">
-                <span>Крепость</span>
-                <span>${stick.intensity || 5}/10</span>
-              </div>
-              <div class="meter-bar">
-                <div class="meter-fill" style="width: ${(stick.intensity || 5) * 10}%;"></div>
-              </div>
-            </div>
-            <div class="meter-col">
-              <div class="meter-meta">
-                <span>Холодок</span>
-                <span>${stick.cooling || 0}/10</span>
-              </div>
-              <div class="meter-bar">
-                <div class="meter-fill fill-cooling" style="width: ${(stick.cooling || 0) * 10}%;"></div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div>
-          <!-- Couple Ratings Display -->
+          <!-- Dual Evaluation Summary -->
           <div class="card-dual-eval">
             <div class="eval-user-half">
               <div class="eval-user-top">
-                <span>${state.user1.avatar} ${escapeHtml(state.user1.name)}</span>
-                <span class="u1-score-val">${u1Score !== null && u1Score > 0 ? u1Score : '—'}</span>
+                <span>${state.user1.avatar} ${escapeHtml(state.user1.shortName || state.user1.name)}</span>
+                <span class="score-u1" style="font-weight: 800; font-family: var(--font-mono);">${u1ScoreDisplay}</span>
               </div>
-              ${u1VerdictTag}
-              ${rating?.u1Notes ? `<span class="eval-user-note" title="${escapeHtml(rating.u1Notes)}">«${escapeHtml(rating.u1Notes)}»</span>` : ''}
+              ${getVerdictBadgeHtml(u1?.verdict)}
+              ${u1?.notes ? `<span class="eval-user-note" title="${escapeHtml(u1.notes)}">«${escapeHtml(u1.notes)}»</span>` : ''}
             </div>
 
             <div class="eval-user-half">
               <div class="eval-user-top">
-                <span>${state.user2.avatar} ${escapeHtml(state.user2.name)}</span>
-                <span class="u2-score-val">${u2Score !== null && u2Score > 0 ? u2Score : '—'}</span>
+                <span>${state.user2.avatar} ${escapeHtml(state.user2.shortName || state.user2.name)}</span>
+                <span class="score-u2" style="font-weight: 800; font-family: var(--font-mono);">${u2ScoreDisplay}</span>
               </div>
-              ${u2VerdictTag}
-              ${rating?.u2Notes ? `<span class="eval-user-note" title="${escapeHtml(rating.u2Notes)}">«${escapeHtml(rating.u2Notes)}»</span>` : ''}
+              ${getVerdictBadgeHtml(u2?.verdict)}
+              ${u2?.notes ? `<span class="eval-user-note" title="${escapeHtml(u2.notes)}">«${escapeHtml(u2.notes)}»</span>` : ''}
             </div>
           </div>
 
           <div class="card-actions-bottom">
-            <div class="avg-mutual-pill" title="Средний общий балл пары">
+            <div class="avg-mutual-pill" title="Итог пары">
               <span>Итог:</span>
-              <span class="avg-mutual-num">${mutualAvgDisplay}</span>
+              <span class="avg-mutual-num">${mutualDisplay}</span>
             </div>
             <button class="btn-rate-stick" onclick="openRateModal('${stick.id}')">
               ${hasRated ? '✏️ Изменить' : '⭐️ Оценить'}
@@ -432,12 +678,11 @@ function getVerdictBadgeHtml(verdict) {
   return `<span class="eval-user-verdict" style="color: var(--text-muted); font-size: 0.7rem;">Не оценен</span>`;
 }
 
-// ================= FILTER & SORT =================
 function getFilteredAndSortedSticks() {
   return state.sticks.filter(stick => {
     // Brand
     if (state.currentFilterBrand !== "ALL") {
-      if (state.currentFilterBrand === "CUSTOM" && stick.brand !== "CUSTOM" && stick.isCustom !== true) return false;
+      if (state.currentFilterBrand === "CUSTOM" && !stick.isCustom) return false;
       if (state.currentFilterBrand !== "CUSTOM" && stick.brand !== state.currentFilterBrand) return false;
     }
 
@@ -450,11 +695,11 @@ function getFilteredAndSortedSticks() {
     if (state.currentFilterStatus !== "ALL") {
       const r = state.ratings[stick.id];
       if (state.currentFilterStatus === "both-rated") {
-        if (!r || r.u1Score <= 0 || r.u2Score <= 0) return false;
+        if (!r || !r.u1?.total || !r.u2?.total) return false;
       } else if (state.currentFilterStatus === "unrated") {
-        if (r && (r.u1Score > 0 || r.u2Score > 0)) return false;
+        if (r && (r.u1?.total || r.u2?.total)) return false;
       } else if (state.currentFilterStatus === "favorites") {
-        if (!r || (r.u1Verdict !== "love" && r.u2Verdict !== "love")) return false;
+        if (!r || (r.u1?.verdict !== "love" && r.u2?.verdict !== "love")) return false;
       }
     }
 
@@ -474,32 +719,24 @@ function getFilteredAndSortedSticks() {
     const rB = state.ratings[b.id] || {};
 
     if (state.sortBy === "mutual") {
-      const scoreA = getMutualScore(rA);
-      const scoreB = getMutualScore(rB);
-      if (scoreA !== scoreB) return scoreB - scoreA;
+      const sA = rA.mutualTotal || 0;
+      const sB = rB.mutualTotal || 0;
+      if (sA !== sB) return sB - sA;
       return a.name.localeCompare(b.name);
     }
 
     if (state.sortBy === "u1") {
-      const sA = rA.u1Score || 0;
-      const sB = rB.u1Score || 0;
+      const sA = rA.u1?.total || 0;
+      const sB = rB.u1?.total || 0;
       if (sA !== sB) return sB - sA;
       return a.name.localeCompare(b.name);
     }
 
     if (state.sortBy === "u2") {
-      const sA = rA.u2Score || 0;
-      const sB = rB.u2Score || 0;
+      const sA = rA.u2?.total || 0;
+      const sB = rB.u2?.total || 0;
       if (sA !== sB) return sB - sA;
       return a.name.localeCompare(b.name);
-    }
-
-    if (state.sortBy === "intensity") {
-      return (b.intensity || 0) - (a.intensity || 0);
-    }
-
-    if (state.sortBy === "cooling") {
-      return (b.cooling || 0) - (a.cooling || 0);
     }
 
     if (state.sortBy === "name") {
@@ -510,111 +747,7 @@ function getFilteredAndSortedSticks() {
   });
 }
 
-function getMutualScore(rating) {
-  if (!rating) return 0;
-  const s1 = rating.u1Score || 0;
-  const s2 = rating.u2Score || 0;
-  if (s1 > 0 && s2 > 0) return (s1 + s2) / 2;
-  if (s1 > 0) return s1 * 0.8; // slightly downrank single-rated in mutual
-  if (s2 > 0) return s2 * 0.8;
-  return 0;
-}
-
-// ================= RATE MODAL =================
-function openRateModal(stickId) {
-  const stick = state.sticks.find(s => s.id === stickId);
-  if (!stick) return;
-
-  state.activeRatingStickId = stickId;
-  const rating = state.ratings[stickId] || {};
-
-  // Header info
-  document.getElementById("modalStickBrand").textContent = stick.brand;
-  document.getElementById("modalStickTitle").textContent = `${stick.name} ${stick.subName || ''}`;
-  document.getElementById("modalStickDesc").textContent = stick.description || "";
-
-  document.getElementById("modalBarIntensity").style.width = `${(stick.intensity || 5) * 10}%`;
-  document.getElementById("modalValIntensity").textContent = `${stick.intensity || 5}/10`;
-  document.getElementById("modalBarCooling").style.width = `${(stick.cooling || 0) * 10}%`;
-  document.getElementById("modalValCooling").textContent = `${stick.cooling || 0}/10`;
-  document.getElementById("modalBarAroma").style.width = `${(stick.aroma || 5) * 10}%`;
-  document.getElementById("modalValAroma").textContent = `${stick.aroma || 5}/10`;
-
-  // User 1 values
-  const u1Val = rating.u1Score ?? 0;
-  document.getElementById("u1ScoreRange").value = u1Val;
-  document.getElementById("u1ScoreDisplay").textContent = u1Val;
-  document.getElementById("u1Notes").value = rating.u1Notes || "";
-  setRadioValue("u1Verdict", rating.u1Verdict || "neutral");
-
-  // User 2 values
-  const u2Val = rating.u2Score ?? 0;
-  document.getElementById("u2ScoreRange").value = u2Val;
-  document.getElementById("u2ScoreDisplay").textContent = u2Val;
-  document.getElementById("u2Notes").value = rating.u2Notes || "";
-  setRadioValue("u2Verdict", rating.u2Verdict || "neutral");
-
-  updateModalMutualAvg();
-  openModal("rateModal");
-}
-
-function updateModalMutualAvg() {
-  const u1 = parseFloat(document.getElementById("u1ScoreRange").value) || 0;
-  const u2 = parseFloat(document.getElementById("u2ScoreRange").value) || 0;
-  const avgEl = document.getElementById("modalMutualAvg");
-
-  if (u1 > 0 && u2 > 0) {
-    avgEl.textContent = ((u1 + u2) / 2).toFixed(1);
-  } else if (u1 > 0) {
-    avgEl.textContent = `${u1} (${state.user1.name})`;
-  } else if (u2 > 0) {
-    avgEl.textContent = `${u2} (${state.user2.name})`;
-  } else {
-    avgEl.textContent = "--";
-  }
-}
-
-function saveStickRating() {
-  if (!state.activeRatingStickId) return;
-
-  const u1Score = parseFloat(document.getElementById("u1ScoreRange").value) || 0;
-  const u1Verdict = getRadioValue("u1Verdict") || "neutral";
-  const u1Notes = document.getElementById("u1Notes").value.trim();
-
-  const u2Score = parseFloat(document.getElementById("u2ScoreRange").value) || 0;
-  const u2Verdict = getRadioValue("u2Verdict") || "neutral";
-  const u2Notes = document.getElementById("u2Notes").value.trim();
-
-  state.ratings[state.activeRatingStickId] = {
-    u1Score,
-    u1Verdict,
-    u1Notes,
-    u2Score,
-    u2Verdict,
-    u2Notes,
-    updatedAt: new Date().toISOString()
-  };
-
-  saveRatings();
-  closeModal("rateModal");
-  updateHeaderStats();
-  renderCurrentTab();
-  showToast("Оценка сохранена! ✨");
-}
-
-function setRadioValue(name, value) {
-  const radios = document.querySelectorAll(`input[name="${name}"]`);
-  radios.forEach(r => {
-    r.checked = (r.value === value);
-  });
-}
-
-function getRadioValue(name) {
-  const checked = document.querySelector(`input[name="${name}"]:checked`);
-  return checked ? checked.value : null;
-}
-
-// ================= TAB 2: LEADERBOARD =================
+// ================= TAB 3: LEADERBOARD =================
 function renderLeaderboard() {
   renderChampions();
   renderUserTopRanked("u1", "u1RankedList");
@@ -626,7 +759,6 @@ function renderChampions() {
   const mutualDiv = document.getElementById("mutualChampionContent");
   const controversyDiv = document.getElementById("controversyContent");
 
-  // Find Mutual Best (both scored > 0)
   let bestStick = null;
   let bestScore = -1;
 
@@ -635,15 +767,14 @@ function renderChampions() {
 
   state.sticks.forEach(stick => {
     const r = state.ratings[stick.id];
-    if (r && r.u1Score > 0 && r.u2Score > 0) {
-      const avg = (r.u1Score + r.u2Score) / 2;
-      if (avg > bestScore) {
-        bestScore = avg;
+    if (r && r.u1?.total && r.u2?.total) {
+      if (r.mutualTotal > bestScore) {
+        bestScore = r.mutualTotal;
         bestStick = stick;
       }
 
-      const diff = Math.abs(r.u1Score - r.u2Score);
-      if (diff > maxScoreDiff && diff >= 2) {
+      const diff = Math.abs(r.u1.total - r.u2.total);
+      if (diff > maxScoreDiff && diff >= 0.6) {
         maxScoreDiff = diff;
         mostControversialStick = stick;
       }
@@ -659,15 +790,15 @@ function renderChampions() {
       </div>
       <p style="font-size: 0.88rem; color: var(--text-secondary);">${escapeHtml(bestStick.description || '')}</p>
       <div class="champ-score-row">
-        <span>Общий балл: <b style="color: var(--accent-gold); font-size: 1.2rem;">${((r.u1Score + r.u2Score) / 2).toFixed(1)}</b></span>
-        <span>${state.user1.avatar}: <b>${r.u1Score}</b></span>
-        <span>${state.user2.avatar}: <b>${r.u2Score}</b></span>
+        <span>Общий балл: <b style="color: var(--accent-gold); font-size: 1.25rem;">${formatDecimal(r.mutualTotal)}</b></span>
+        <span>${state.user1.shortName || state.user1.name}: <b>${formatDecimal(r.u1.total)}</b></span>
+        <span>${state.user2.shortName || state.user2.name}: <b>${formatDecimal(r.u2.total)}</b></span>
       </div>
     `;
   } else {
     mutualDiv.innerHTML = `
       <p style="color: var(--text-muted); font-size: 0.9rem; padding-top: 10px;">
-        Оцените хотя бы 1 стик вместе, чтобы выявить победителя пары!
+        Оцените хотя бы 1 стик вместе, чтобы выявить победителя!
       </p>
     `;
   }
@@ -677,11 +808,11 @@ function renderChampions() {
     controversyDiv.innerHTML = `
       <div class="champ-title-row">
         <span class="champ-stick-name">${escapeHtml(mostControversialStick.name)}</span>
-        <span class="champ-brand" style="color: #f87171;">Разница: ${maxScoreDiff} б.</span>
+        <span class="champ-brand" style="color: #f87171;">Разница: ${formatDecimal(maxScoreDiff)} б.</span>
       </div>
       <div class="champ-score-row">
-        <span>${state.user1.avatar} ${state.user1.name}: <b>${r.u1Score}/10</b></span>
-        <span>${state.user2.avatar} ${state.user2.name}: <b>${r.u2Score}/10</b></span>
+        <span>${state.user1.shortName || state.user1.name}: <b>${formatDecimal(r.u1.total)}</b></span>
+        <span>${state.user2.shortName || state.user2.name}: <b>${formatDecimal(r.u2.total)}</b></span>
       </div>
       <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
         «Кажется, здесь вам стоит провести дополнительную дегустацию!»
@@ -690,7 +821,7 @@ function renderChampions() {
   } else {
     controversyDiv.innerHTML = `
       <p style="color: var(--text-muted); font-size: 0.9rem; padding-top: 10px;">
-        Пока в ваших вкусах полная гармония или мало общих оценок!
+        Пока в ваших оценках полная гармония!
       </p>
     `;
   }
@@ -698,12 +829,11 @@ function renderChampions() {
 
 function renderUserTopRanked(userKey, containerId) {
   const container = document.getElementById(containerId);
-  const scoreProp = userKey === "u1" ? "u1Score" : "u2Score";
 
   const ratedSticks = state.sticks
     .map(stick => ({ stick, rating: state.ratings[stick.id] }))
-    .filter(item => item.rating && item.rating[scoreProp] > 0)
-    .sort((a, b) => b.rating[scoreProp] - a.rating[scoreProp])
+    .filter(item => item.rating && item.rating[userKey]?.total > 0)
+    .sort((a, b) => b.rating[userKey].total - a.rating[userKey].total)
     .slice(0, 5);
 
   if (ratedSticks.length === 0) {
@@ -717,6 +847,8 @@ function renderUserTopRanked(userKey, containerId) {
 
   container.innerHTML = ratedSticks.map((item, idx) => {
     const scoreColor = userKey === "u1" ? "var(--u1-color)" : "var(--u2-color)";
+    const totalVal = formatDecimal(item.rating[userKey].total);
+
     return `
       <div class="ranked-item" onclick="openRateModal('${item.stick.id}')" style="cursor: pointer;">
         <span class="rank-num">#${idx + 1}</span>
@@ -725,7 +857,7 @@ function renderUserTopRanked(userKey, containerId) {
           <div class="rank-stick-brand">${item.stick.brand} • ${item.stick.categoryName || ''}</div>
         </div>
         <div class="rank-score" style="color: ${scoreColor};">
-          ${item.rating[scoreProp]}/10
+          ${totalVal}
         </div>
       </div>
     `;
@@ -737,14 +869,14 @@ function renderMutualTable() {
   
   const rated = state.sticks
     .map(stick => ({ stick, rating: state.ratings[stick.id] }))
-    .filter(item => item.rating && (item.rating.u1Score > 0 || item.rating.u2Score > 0))
-    .sort((a, b) => getMutualScore(b.rating) - getMutualScore(a.rating));
+    .filter(item => item.rating && (item.rating.u1?.total || item.rating.u2?.total))
+    .sort((a, b) => (b.rating.mutualTotal || 0) - (a.rating.mutualTotal || 0));
 
   if (rated.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
-          Вы пока не оценили ни одного стика. Перейдите в каталог и начните дегустацию!
+        <td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">
+          Вы пока не оценили ни одного стика
         </td>
       </tr>
     `;
@@ -753,17 +885,15 @@ function renderMutualTable() {
 
   tbody.innerHTML = rated.map((item, index) => {
     const r = item.rating;
-    const avg = (r.u1Score > 0 && r.u2Score > 0) 
-      ? ((r.u1Score + r.u2Score) / 2).toFixed(1) 
-      : ((r.u1Score || r.u2Score)).toFixed(1) + "*";
+    const u1 = r.u1?.total ? formatDecimal(r.u1.total) : "—";
+    const u2 = r.u2?.total ? formatDecimal(r.u2.total) : "—";
+    const mutual = r.mutualTotal ? formatDecimal(r.mutualTotal) : "—";
 
     let verdictText = "Обычный";
-    if (r.u1Verdict === "love" && r.u2Verdict === "love") {
+    if (r.u1?.verdict === "love" && r.u2?.verdict === "love") {
       verdictText = "🔥 Оба в восторге!";
-    } else if (r.u1Verdict === "love" || r.u2Verdict === "love") {
+    } else if (r.u1?.verdict === "love" || r.u2?.verdict === "love") {
       verdictText = "❤️ Купим снова";
-    } else if (r.u1Verdict === "hate" || r.u2Verdict === "hate") {
-      verdictText = "⚠️ На любителя";
     }
 
     return `
@@ -776,10 +906,9 @@ function renderMutualTable() {
           </div>
         </td>
         <td>${item.stick.brand}</td>
-        <td><span class="note-tag">${item.stick.categoryName || item.stick.category}</span></td>
-        <td style="color: var(--u1-color); font-weight: 700;">${r.u1Score > 0 ? r.u1Score : '—'}</td>
-        <td style="color: var(--u2-color); font-weight: 700;">${r.u2Score > 0 ? r.u2Score : '—'}</td>
-        <td style="font-weight: 800; font-family: var(--font-mono); color: #fff;">${avg}</td>
+        <td style="color: var(--u1-color); font-weight: 700;">${u1}</td>
+        <td style="color: var(--u2-color); font-weight: 700;">${u2}</td>
+        <td style="font-weight: 800; font-family: var(--font-mono); color: #fff;">${mutual}</td>
         <td><span style="font-size: 0.8rem;">${verdictText}</span></td>
         <td>
           <button class="btn btn-secondary btn-sm" onclick="openRateModal('${item.stick.id}')">Изменить</button>
@@ -789,7 +918,7 @@ function renderMutualTable() {
   }).join("");
 }
 
-// ================= TAB 3: COMPATIBILITY =================
+// ================= TAB 4: COMPATIBILITY =================
 function renderCompatibility() {
   const result = calculateCoupleCompatibility();
 
@@ -803,28 +932,27 @@ function renderCompatibility() {
   const recBox = document.getElementById("coupleRecommendationBox");
 
   if (result.bothCount < 2) {
-    headline.textContent = "Начните ваше вкусовое путешествие!";
-    desc.textContent = "Оцените хотя бы 2-3 разных вкуса вместе, чтобы система рассчитала процент вашего вкусового взаимопонимания.";
+    headline.textContent = "Начните вашу дегустацию!";
+    desc.textContent = "Оцените хотя бы 2-3 вкуса по 5 критериям, чтобы система рассчитала гармонию ваших предпочтений.";
     recBox.innerHTML = `
-      <p>💡 <b>Совет для старта:</b> Возьмите пачку популярного бленда (например, <i>TEREA Amber</i> или <i>Purple Wave</i>), сделайте по 2-3 затяжки и запишите свои первые впечатления!</p>
+      <p>💡 <b>Совет:</b> Загляните в таблицу дегустации и оцените вкусы, которые вы уже пробовали!</p>
     `;
   } else {
     if (result.percent >= 80) {
-      headline.textContent = "Идеальное гастрономическое совпадение! 🔥";
-      desc.textContent = "Вы удивительно похожи в своих вкусах на стики! Вам легко покупать одну пачку на двоих — вероятность споров минимальна.";
+      headline.textContent = "Идеальное совпадение вкусов! 🔥";
+      desc.textContent = "Ваши оценки по 5 критериям практически идентичны. Вам отлично подойдет одна пачка на двоих!";
     } else if (result.percent >= 55) {
-      headline.textContent = "Золотая середина с изюминкой! ✨";
-      desc.textContent = "У вас есть общие фавориты, но в деталях каждый ценит свое. Например, один предпочитает свежесть, а другой — плотный табак.";
+      headline.textContent = "Отличная гармония! ✨";
+      desc.textContent = "У вас есть общие фавориты, но в нюансах (аромат или комфорт горла) вкусы могут немного отличаться.";
     } else {
-      headline.textContent = "Противоположности притягиваются! ⚡";
-      desc.textContent = "Ваши вкусовые рецепторы кардинально отличаются! Лучшее решение для вашей пары — всегда иметь две разные пачки в запасе.";
+      headline.textContent = "Яркие противоположности! ⚡";
+      desc.textContent = "Каждый из вас ценит свои нюансы в стиках. Лучшее решение — покупать разные вкусы для каждого.";
     }
 
-    // Dynamic smart recommendation
-    recBox.innerHTML = generateCoupleRecommendation(result);
+    recBox.innerHTML = generateCoupleRecommendation();
   }
 
-  renderCategoryPreferences();
+  renderCriteriaPreferences();
 }
 
 function calculateCoupleCompatibility() {
@@ -835,12 +963,12 @@ function calculateCoupleCompatibility() {
 
   state.sticks.forEach(stick => {
     const r = state.ratings[stick.id];
-    if (r && r.u1Score > 0 && r.u2Score > 0) {
+    if (r && r.u1?.total && r.u2?.total) {
       bothCount++;
-      const diff = Math.abs(r.u1Score - r.u2Score);
+      const diff = Math.abs(r.u1.total - r.u2.total);
       totalScoreDiff += diff;
-      if (diff <= 1.5) agreements++;
-      if (diff >= 3) disagreements++;
+      if (diff <= 0.4) agreements++;
+      if (diff >= 1.0) disagreements++;
     }
   });
 
@@ -848,9 +976,9 @@ function calculateCoupleCompatibility() {
     return { percent: 0, bothCount: 0, agreements: 0, disagreements: 0 };
   }
 
-  // Max diff per stick is 10. Avg diff of 0 => 100%, avg diff of 5 => 50%
+  // Max diff on 1-5 scale is 4. Avg diff of 0 => 100%, avg diff of 2 => 50%
   const avgDiff = totalScoreDiff / bothCount;
-  const matchPercent = Math.max(0, Math.min(100, Math.round((1 - (avgDiff / 5)) * 100)));
+  const matchPercent = Math.max(0, Math.min(100, Math.round((1 - (avgDiff / 2)) * 100)));
 
   return {
     percent: matchPercent,
@@ -860,26 +988,16 @@ function calculateCoupleCompatibility() {
   };
 }
 
-function renderCategoryPreferences() {
+function renderCriteriaPreferences() {
   const container = document.getElementById("categoryPrefList");
-  const categories = [
-    { key: "tobacco", label: "🍂 Классический табак" },
-    { key: "berry", label: "🫐 Ягоды и фрукты" },
-    { key: "citrus", label: "🍋 Цитрус и свежесть" },
-    { key: "menthol", label: "❄️ Ментол и прохлада" },
-    { key: "capsule", label: "💥 С капсулой" }
-  ];
 
-  container.innerHTML = categories.map(cat => {
+  container.innerHTML = RATING_CRITERIA.map(crit => {
     let u1Total = 0, u1Count = 0;
     let u2Total = 0, u2Count = 0;
 
-    state.sticks.filter(s => s.category === cat.key).forEach(s => {
-      const r = state.ratings[s.id];
-      if (r) {
-        if (r.u1Score > 0) { u1Total += r.u1Score; u1Count++; }
-        if (r.u2Score > 0) { u2Total += r.u2Score; u2Count++; }
-      }
+    Object.values(state.ratings).forEach(r => {
+      if (r.u1?.[crit.id]) { u1Total += r.u1[crit.id]; u1Count++; }
+      if (r.u2?.[crit.id]) { u2Total += r.u2[crit.id]; u2Count++; }
     });
 
     const u1Avg = u1Count > 0 ? (u1Total / u1Count).toFixed(1) : 0;
@@ -888,50 +1006,46 @@ function renderCategoryPreferences() {
     return `
       <div class="cat-pref-item">
         <div class="cat-pref-head">
-          <span>${cat.label}</span>
+          <span>${crit.icon} ${crit.name}</span>
           <span style="font-size: 0.78rem; font-family: var(--font-mono);">
-            <span style="color: var(--u1-color);">${state.user1.name}: ${u1Avg}</span> | 
-            <span style="color: var(--u2-color);">${state.user2.name}: ${u2Avg}</span>
+            <span style="color: var(--u1-color);">${state.user1.shortName || state.user1.name}: ${formatDecimal(u1Avg)}</span> | 
+            <span style="color: var(--u2-color);">${state.user2.shortName || state.user2.name}: ${formatDecimal(u2Avg)}</span>
           </span>
         </div>
         <div class="cat-bars-dual">
-          <div class="cat-bar-u1" style="width: ${u1Avg * 10}%;"></div>
-          <div class="cat-bar-u2" style="width: ${u2Avg * 10}%;"></div>
+          <div class="cat-bar-u1" style="width: ${u1Avg * 20}%;"></div>
+          <div class="cat-bar-u2" style="width: ${u2Avg * 20}%;"></div>
         </div>
       </div>
     `;
   }).join("");
 }
 
-function generateCoupleRecommendation(matchData) {
-  // Find highest rated mutual stick
+function generateCoupleRecommendation() {
   const topMutual = state.sticks
     .map(s => ({ stick: s, rating: state.ratings[s.id] }))
-    .filter(i => i.rating && i.rating.u1Score >= 7 && i.rating.u2Score >= 7)
-    .sort((a, b) => (b.rating.u1Score + b.rating.u2Score) - (a.rating.u1Score + a.rating.u2Score));
+    .filter(i => i.rating && i.rating.u1?.total >= 4.0 && i.rating.u2?.total >= 4.0)
+    .sort((a, b) => b.rating.mutualTotal - a.rating.mutualTotal);
 
   if (topMutual.length > 0) {
     const s = topMutual[0].stick;
     return `
-      <p>🎯 <b>Ваш беспроигрышный выбор:</b> <b>${escapeHtml(s.brand)} ${escapeHtml(s.name)}</b>! Оба оценили его на высший балл. Когда не знаете, что купить в табачном магазине — берите эту пачку, не прогадаете!</p>
-      <p style="margin-top: 10px; font-size: 0.88rem; color: var(--text-secondary);">
-        Всего надежных общих фаворитов в вашей копилке: <b>${topMutual.length}</b> вкуса.
-      </p>
+      <p>🎯 <b>Ваш беспроигрышный выбор:</b> <b>${escapeHtml(s.brand)} ${escapeHtml(s.name)}</b>! Оба оценили его на высокий балл (${formatDecimal(topMutual[0].rating.mutualTotal)}/5). Рекомендуем брать его в запас!</p>
     `;
   }
 
   return `
-    <p>💡 Продолжайте дегустировать стики из разных линеек — TEREA и HEETS скрывают еще множество ароматов от темного какао до ягодной свежести!</p>
+    <p>💡 Оценивайте больше стиков по 5 критериям, чтобы найти идеальный баланс вкуса и аромата!</p>
   `;
 }
 
-// ================= TAB 4: WISHLIST =================
+// ================= TAB 5: WISHLIST =================
 function renderWishlist() {
   const grid = document.getElementById("wishlistGrid");
 
   const wishlistSticks = state.sticks.filter(stick => {
     const r = state.ratings[stick.id];
-    return r && (r.u1Verdict === "love" || r.u2Verdict === "love");
+    return r && ((r.u1 && r.u1.verdict === "love") || (r.u2 && r.u2.verdict === "love"));
   });
 
   if (wishlistSticks.length === 0) {
@@ -947,7 +1061,7 @@ function renderWishlist() {
 
   grid.innerHTML = wishlistSticks.map(stick => {
     const r = state.ratings[stick.id];
-    const isBothLove = (r.u1Verdict === "love" && r.u2Verdict === "love");
+    const isBothLove = (r.u1?.verdict === "love" && r.u2?.verdict === "love");
 
     return `
       <div class="wishlist-item-card" style="border-left: 4px solid ${stick.color};">
@@ -962,16 +1076,16 @@ function renderWishlist() {
 
         <div style="background: rgba(255, 255, 255, 0.04); padding: 8px 12px; border-radius: 8px; font-size: 0.82rem;">
           <div style="display: flex; justify-content: space-between;">
-            <span>${state.user1.name}:</span>
-            <b>${r.u1Verdict === "love" ? "❤️ Купим!" : r.u1Score > 0 ? r.u1Score + "/10" : "Не пробовал"}</b>
+            <span>${state.user1.shortName || state.user1.name}:</span>
+            <b>${r.u1?.verdict === "love" ? "❤️ Купим!" : r.u1?.total ? formatDecimal(r.u1.total) : "—"}</b>
           </div>
           <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-            <span>${state.user2.name}:</span>
-            <b>${r.u2Verdict === "love" ? "❤️ Купим!" : r.u2Score > 0 ? r.u2Score + "/10" : "Не пробовала"}</b>
+            <span>${state.user2.shortName || state.user2.name}:</span>
+            <b>${r.u2?.verdict === "love" ? "❤️ Купим!" : r.u2?.total ? formatDecimal(r.u2.total) : "—"}</b>
           </div>
         </div>
 
-        <button class="btn btn-secondary btn-sm" onclick="openRateModal('${stick.id}')">Изменить оценку</button>
+        <button class="btn btn-secondary btn-sm" onclick="openRateModal('${stick.id}')">Изменить баллы</button>
       </div>
     `;
   }).join("");
@@ -992,7 +1106,6 @@ function pickMysteryStick() {
   const hint = document.getElementById("blindRateHint");
   const revealBtn = document.getElementById("btnRevealMystery");
 
-  // Reset to front
   mysteryBack.innerHTML = "";
   cardInner.querySelector(".mystery-front").style.display = "block";
   hint.style.display = "none";
@@ -1018,14 +1131,11 @@ function revealMysteryStick() {
         ${stick.brand}
       </div>
       <h2 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 4px 0 10px;">
-        ${escapeHtml(stick.name)} ${stick.subName || ''}
+        ${escapeHtml(stick.name)}
       </h2>
       <p style="color: var(--text-secondary); max-width: 420px; margin: 0 auto 12px; font-size: 0.9rem;">
         ${escapeHtml(stick.description || '')}
       </p>
-      <div class="stick-tags" style="justify-content: center;">
-        ${(stick.notes || []).map(n => `<span class="note-tag">#${escapeHtml(n)}</span>`).join("")}
-      </div>
     </div>
   `;
 
@@ -1046,17 +1156,17 @@ function spinRoulette() {
   if (filterType === "favorites") {
     candidates = candidates.filter(s => {
       const r = state.ratings[s.id];
-      return r && (r.u1Verdict === "love" || r.u2Verdict === "love" || (r.u1Score >= 7 && r.u2Score >= 7));
+      return r && ((r.u1 && r.u1.verdict === "love") || (r.u2 && r.u2.verdict === "love") || r.mutualTotal >= 4.0);
     });
   } else if (filterType === "unrated") {
     candidates = candidates.filter(s => {
       const r = state.ratings[s.id];
-      return !r || (r.u1Score === 0 && r.u2Score === 0);
+      return !r || (!r.u1?.total && !r.u2?.total);
     });
   }
 
   if (candidates.length === 0) {
-    showToast("Нет стиков, подходящих под выбранный фильтр!");
+    showToast("Нет подходящих стиков под фильтр");
     return;
   }
 
@@ -1065,7 +1175,7 @@ function spinRoulette() {
   spinBtn.disabled = true;
 
   let counter = 0;
-  const maxIterations = 20;
+  const maxIterations = 18;
   const interval = setInterval(() => {
     const randomPick = candidates[Math.floor(Math.random() * candidates.length)];
     slot.innerHTML = `
@@ -1111,8 +1221,6 @@ function handleAddCustomStick(e) {
   const category = document.getElementById("newStickCategory").value;
   const description = document.getElementById("newStickDesc").value.trim();
   const notesRaw = document.getElementById("newStickNotes").value.trim();
-  const intensity = parseInt(document.getElementById("newStickIntensity").value, 10);
-  const cooling = parseInt(document.getElementById("newStickCooling").value, 10);
 
   if (!name) return;
 
@@ -1125,11 +1233,12 @@ function handleAddCustomStick(e) {
     subName: "Свой выбор",
     color,
     accentColor: color,
+    bgTint: "rgba(255, 255, 255, 0.08)",
     category,
     categoryName: getCategoryName(category),
-    intensity,
-    cooling,
-    aroma: 6,
+    intensity: 4,
+    cooling: 3,
+    aroma: 4,
     hasCapsule: category === "capsule",
     description: description || "Пользовательский вкус стиков",
     notes,
@@ -1141,17 +1250,17 @@ function handleAddCustomStick(e) {
 
   closeModal("addStickModal");
   document.getElementById("addStickForm").reset();
-  showToast(`Стик «${name}» добавлен! 🎉`);
-  renderSticksGrid();
+  showToast(`Вкус «${name}» добавлен! 🎉`);
+  renderCurrentTab();
   updateHeaderStats();
 }
 
 function getCategoryName(key) {
   switch (key) {
-    case "tobacco": return "Классический табак";
-    case "berry": return "Ягодные и фруктовые";
     case "citrus": return "Цитрусовые и пряные";
+    case "berry": return "Ягодные и фруктовые";
     case "menthol": return "Свежесть и ментол";
+    case "tobacco": return "Классический табак";
     case "capsule": return "С капсулой";
     default: return "Особый вкус";
   }
@@ -1161,31 +1270,31 @@ function getCategoryName(key) {
 function openSettingsModal() {
   document.getElementById("settingU1Avatar").value = state.user1.avatar;
   document.getElementById("settingU1Name").value = state.user1.name;
+  document.getElementById("settingU1ShortName").value = state.user1.shortName || "Андрюша";
   document.getElementById("settingU2Avatar").value = state.user2.avatar;
   document.getElementById("settingU2Name").value = state.user2.name;
+  document.getElementById("settingU2ShortName").value = state.user2.shortName || "Катюша";
   openModal("settingsModal");
 }
 
 function saveCoupleSettings() {
-  const u1Name = document.getElementById("settingU1Name").value.trim() || "Парень";
-  const u1Avatar = document.getElementById("settingU1Avatar").value.trim() || "🧔‍♂️";
-  const u2Name = document.getElementById("settingU2Name").value.trim() || "Девушка";
-  const u2Avatar = document.getElementById("settingU2Avatar").value.trim() || "👩‍🦰";
+  state.user1.name = document.getElementById("settingU1Name").value.trim() || "Андрей";
+  state.user1.shortName = document.getElementById("settingU1ShortName").value.trim() || "Андрюша";
+  state.user1.avatar = document.getElementById("settingU1Avatar").value.trim() || "🧔‍♂️";
 
-  state.user1.name = u1Name;
-  state.user1.avatar = u1Avatar;
-  state.user2.name = u2Name;
-  state.user2.avatar = u2Avatar;
+  state.user2.name = document.getElementById("settingU2Name").value.trim() || "Катя";
+  state.user2.shortName = document.getElementById("settingU2ShortName").value.trim() || "Катюша";
+  state.user2.avatar = document.getElementById("settingU2Avatar").value.trim() || "👩‍🦰";
 
   saveUsers();
   updateUserInterfaceLabels();
   renderCurrentTab();
-  showToast("Имена участников обновлены! ✨");
+  showToast("Имена обновлены! ✨");
 }
 
 function exportDataJson() {
   const exportPayload = {
-    version: 1,
+    version: 2,
     exportDate: new Date().toISOString(),
     user1: state.user1,
     user2: state.user2,
@@ -1201,7 +1310,7 @@ function exportDataJson() {
   downloadAnchor.click();
   downloadAnchor.remove();
 
-  showToast("Файл резервной копии скачан! 💾");
+  showToast("Резервная копия сохранена! 💾");
 }
 
 function importDataJson(e) {
@@ -1216,12 +1325,8 @@ function importDataJson(e) {
         state.ratings = { ...state.ratings, ...data.ratings };
         saveRatings();
       }
-      if (data.user1) {
-        state.user1 = data.user1;
-      }
-      if (data.user2) {
-        state.user2 = data.user2;
-      }
+      if (data.user1) state.user1 = data.user1;
+      if (data.user2) state.user2 = data.user2;
       saveUsers();
 
       if (data.customSticks && Array.isArray(data.customSticks)) {
@@ -1240,19 +1345,24 @@ function importDataJson(e) {
       showToast("Данные успешно синхронизированы! 🚀");
     } catch (err) {
       console.error(err);
-      alert("Ошибка при чтении файла. Убедитесь, что это корректный JSON бэкап.");
+      alert("Ошибка при чтении файла резервной копии.");
     }
   };
   reader.readAsText(file);
 }
 
 function resetAllData() {
-  if (confirm("Вы уверены, что хотите сбросить все оценки и вернуть начальный каталог? Это действие нельзя отменить.")) {
-    localStorage.clear();
+  if (confirm("Вы уверены, что хотите сбросить оценки к исходным данным?")) {
+    localStorage.removeItem(STORAGE_KEYS.STICKS);
+    localStorage.removeItem(STORAGE_KEYS.RATINGS);
+    localStorage.removeItem(STORAGE_KEYS.USER1);
+    localStorage.removeItem(STORAGE_KEYS.USER2);
+    
     state.sticks = [...INITIAL_STICKS];
-    state.ratings = {};
+    state.ratings = { ...INITIAL_RATINGS };
     state.user1 = { ...DEFAULT_USER1 };
     state.user2 = { ...DEFAULT_USER2 };
+    
     saveSticks();
     saveRatings();
     saveUsers();
@@ -1261,7 +1371,7 @@ function resetAllData() {
     updateHeaderStats();
     renderCurrentTab();
     closeModal("settingsModal");
-    showToast("Данные сброшены к начальным");
+    showToast("Данные сброшены");
   }
 }
 
@@ -1269,29 +1379,31 @@ function resetAllData() {
 function copyLeaderboardToClipboard() {
   const rated = state.sticks
     .map(stick => ({ stick, rating: state.ratings[stick.id] }))
-    .filter(item => item.rating && (item.rating.u1Score > 0 || item.rating.u2Score > 0))
-    .sort((a, b) => getMutualScore(b.rating) - getMutualScore(a.rating));
+    .filter(item => item.rating && (item.rating.u1?.total || item.rating.u2?.total))
+    .sort((a, b) => (b.rating.mutualTotal || 0) - (a.rating.mutualTotal || 0));
 
   if (rated.length === 0) {
     showToast("Нет оцененных стиков для экспорта");
     return;
   }
 
-  let text = `💨 НАШ ТОП СТИКОВ ДЛЯ IQOS (${state.user1.avatar} ${state.user1.name} & ${state.user2.avatar} ${state.user2.name}):\n\n`;
+  let text = `💨 НАШ ТОП СТИКОВ ДЛЯ IQOS (${state.user1.avatar} ${state.user1.shortName || state.user1.name} & ${state.user2.avatar} ${state.user2.shortName || state.user2.name}):\n\n`;
 
   rated.slice(0, 10).forEach((item, idx) => {
     const r = item.rating;
-    const avg = ((r.u1Score + r.u2Score) / 2).toFixed(1);
-    text += `${idx + 1}. ${item.stick.brand} ${item.stick.name} — ${avg}/10 (${state.user1.avatar}: ${r.u1Score}, ${state.user2.avatar}: ${r.u2Score})\n`;
+    const u1 = r.u1?.total ? formatDecimal(r.u1.total) : "—";
+    const u2 = r.u2?.total ? formatDecimal(r.u2.total) : "—";
+    const mutual = r.mutualTotal ? formatDecimal(r.mutualTotal) : "—";
+    text += `${idx + 1}. ${item.stick.brand} ${item.stick.name} — Итог: ${mutual} (${state.user1.shortName || state.user1.name}: ${u1}, ${state.user2.shortName || state.user2.name}: ${u2})\n`;
   });
 
-  copyTextToClipboard(text, "Рейтинг скопирован! Можно отправить в Telegram 💬");
+  copyTextToClipboard(text, "Рейтинг скопирован для Telegram! 💬");
 }
 
 function copyWishlistToClipboard() {
   const wishlistSticks = state.sticks.filter(stick => {
     const r = state.ratings[stick.id];
-    return r && (r.u1Verdict === "love" || r.u2Verdict === "love");
+    return r && ((r.u1 && r.u1.verdict === "love") || (r.u2 && r.u2.verdict === "love"));
   });
 
   if (wishlistSticks.length === 0) {
@@ -1300,7 +1412,7 @@ function copyWishlistToClipboard() {
   }
 
   let text = `🛒 СПИСОК СТИКОВ К ПОКУПКЕ (${state.user1.name} + ${state.user2.name}):\n\n`;
-  wishlistSticks.forEach((stick, i) => {
+  wishlistSticks.forEach(stick => {
     text += `▫️ ${stick.brand} ${stick.name}\n`;
   });
 
@@ -1343,7 +1455,26 @@ function showToast(message) {
   }, 2800);
 }
 
-// ================= UTILITIES =================
+// ================= FORMAT UTILITIES =================
+function formatDecimal(num) {
+  if (num === null || num === undefined || isNaN(num)) return "—";
+  return Number(num).toFixed(1).replace(".", ",");
+}
+
+function getTextColorForBg(hexColor) {
+  // If it's a light tint, return dark text, else return white
+  if (!hexColor || hexColor.startsWith("rgba")) return "#fff";
+  const hex = hexColor.replace("#", "");
+  if (hex.length === 6) {
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 150) ? "#1e293b" : "#ffffff";
+  }
+  return "#ffffff";
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");

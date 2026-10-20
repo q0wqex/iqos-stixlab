@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STIX LAB — Выбираем лучшие стики для IQOS вдвоем</title>
-  <meta name="description" content="Удобное приложение для совместной дегустации и оценки стиков IQOS (TEREA, HEETS, FIIT). Оценивайте вдвоем, находите идеальные вкусы и делитесь результатами.">
+  <title>STIX LAB — Оценка стиков IQOS для Андрея и Кати</title>
+  <meta name="description" content="Удобное приложение для совместной дегустации и оценки стиков IQOS (HEETS, TEREA, FIIT) по 5 точным критериям вкуса.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
 </head>
@@ -26,15 +26,15 @@
         </div>
         <div class="brand-text">
           <div class="brand-title">STIX <span class="accent-text">LAB</span></div>
-          <div class="brand-subtitle">Парная дегустация стиков IQOS</div>
+          <div class="brand-subtitle">Дегустация стиков по 5 критериям</div>
         </div>
       </div>
 
-      <!-- Quick Couple Profile Badges -->
+      <!-- Quick Couple Profile Badges (Андрей & Катя) -->
       <div class="couple-profiles-bar" id="coupleProfilesBar" title="Нажмите, чтобы настроить имена и аватарки">
         <div class="user-chip u1-chip" id="u1Chip">
           <span class="user-avatar" id="u1Avatar">🧔‍♂️</span>
-          <span class="user-name" id="u1Name">Парень</span>
+          <span class="user-name" id="u1Name">Андрей</span>
           <span class="user-score-badge" id="u1Count">0</span>
         </div>
         <div class="couple-match-indicator" id="headerMatchIndicator" title="Процент совпадения вкусов">
@@ -43,12 +43,12 @@
         </div>
         <div class="user-chip u2-chip" id="u2Chip">
           <span class="user-avatar" id="u2Avatar">👩‍🦰</span>
-          <span class="user-name" id="u2Name">Девушка</span>
+          <span class="user-name" id="u2Name">Катя</span>
           <span class="user-score-badge" id="u2Count">0</span>
         </div>
       </div>
 
-      <!-- Actions -->
+      <!-- Header Quick Actions -->
       <div class="header-actions">
         <button class="btn btn-secondary btn-icon" id="btnRoulette" title="Случайный стик на пробу">
           <span>🎲</span> <span class="hide-sm">Что покурить?</span>
@@ -64,14 +64,18 @@
 
     <!-- Navigation Tabs -->
     <nav class="main-tabs-nav">
-      <button class="tab-btn active" data-tab="catalog">
+      <button class="tab-btn active" data-tab="sheet">
+        <span class="tab-icon">📊</span>
+        <span>Таблица оценок</span>
+      </button>
+      <button class="tab-btn" data-tab="catalog">
         <span class="tab-icon">📦</span>
-        <span>Каталог вкусов</span>
+        <span>Карточки стиков</span>
         <span class="tab-badge" id="catalogTotalBadge">0</span>
       </button>
       <button class="tab-btn" data-tab="leaderboard">
         <span class="tab-icon">🏆</span>
-        <span>Наш Топ и Рейтинги</span>
+        <span>Наш Топ</span>
       </button>
       <button class="tab-btn" data-tab="compare">
         <span class="tab-icon">⚖️</span>
@@ -85,18 +89,118 @@
   </header>
 
   <main class="app-main">
-    <!-- ================= TAB 1: CATALOG ================= -->
-    <section class="tab-content active" id="tab-catalog">
-      <!-- Sticky Filter and Search Bar -->
+    <!-- ================= TAB 1: SPREADSHEET VIEW (LIKE USER'S EXCEL) ================= -->
+    <section class="tab-content active" id="tab-sheet">
+      <div class="sheet-view-layout">
+        <!-- Left: Spreadsheet Table -->
+        <div class="sheet-main-col glass-card">
+          <div class="sheet-header-row">
+            <div class="sheet-title-group">
+              <h2 class="sheet-title">Таблица дегустации</h2>
+              <p class="subtext">Кликните по любой строке, чтобы просмотреть или изменить баллы по 5 критериям</p>
+            </div>
+            <div class="sheet-brand-filter">
+              <button class="sheet-brand-btn active" data-sheet-brand="HEETS">HEETS</button>
+              <button class="sheet-brand-btn" data-sheet-brand="TEREA">TEREA</button>
+              <button class="sheet-brand-btn" data-sheet-brand="FIIT">FIIT</button>
+              <button class="sheet-brand-btn" data-sheet-brand="ALL">Все</button>
+              <button class="btn btn-primary btn-sm" id="btnAddNewStickFromSheet" style="margin-left: 8px;">
+                <span>➕</span> Добавить вкус
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive sheet-table-wrapper">
+            <table class="excel-style-table" id="excelTable">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Вкус</th>
+                  <th style="width: 45%;">Описание</th>
+                  <th style="width: 10%; text-align: center;" class="th-u2" id="sheetThU2">Катя</th>
+                  <th style="width: 10%; text-align: center;" class="th-u1" id="sheetThU1">Андрей</th>
+                  <th style="width: 10%; text-align: center;" class="th-total">Итог</th>
+                </tr>
+              </thead>
+              <tbody id="excelTableBody">
+                <!-- Dynamically generated rows matching user's spreadsheet -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Side Inspection Card for Selected Stick (like right table in screenshot) -->
+        <div class="sheet-side-col">
+          <div class="inspect-card glass-card" id="inspectCard">
+            <div class="inspect-stick-header" id="inspectStickHeader">
+              <span class="inspect-stick-title" id="inspectStickName">Green zing</span>
+              <button class="btn btn-primary btn-sm" id="btnInspectEditRate">✏️ Оценить</button>
+            </div>
+
+            <!-- Andrey's criteria table -->
+            <div class="user-criteria-block u1-criteria-bg">
+              <div class="criteria-block-header u1-header" id="inspectU1Header">Андрюша</div>
+              <table class="mini-criteria-table">
+                <thead>
+                  <tr>
+                    <th>Критерий</th>
+                    <th style="text-align: right;">Оценка</th>
+                  </tr>
+                </thead>
+                <tbody id="inspectU1Body">
+                  <!-- Injected by JS -->
+                </tbody>
+                <tfoot>
+                  <tr class="criteria-foot-row u1-foot">
+                    <td><b>Итог</b></td>
+                    <td style="text-align: right;"><b id="inspectU1Total">4,2</b></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Katya's criteria table -->
+            <div class="user-criteria-block u2-criteria-bg">
+              <div class="criteria-block-header u2-header" id="inspectU2Header">Катюша</div>
+              <table class="mini-criteria-table">
+                <thead>
+                  <tr>
+                    <th>Критерий</th>
+                    <th style="text-align: right;">Оценка</th>
+                  </tr>
+                </thead>
+                <tbody id="inspectU2Body">
+                  <!-- Injected by JS -->
+                </tbody>
+                <tfoot>
+                  <tr class="criteria-foot-row u2-foot">
+                    <td><b>Итог</b></td>
+                    <td style="text-align: right;"><b id="inspectU2Total">4,6</b></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Mutual Total Box -->
+            <div class="inspect-mutual-summary">
+              <span>Общий балл пары:</span>
+              <span class="inspect-mutual-val" id="inspectMutualTotal">4,4</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: CARDS CATALOG ================= -->
+    <section class="tab-content" id="tab-catalog">
       <div class="controls-panel glass-card">
         <div class="search-and-quick">
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Поиск стика (например, Amber, черника, ментол, какао)..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Поиск стика (например, Green zing, Amber, лайм, ментол)..." autocomplete="off">
             <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">✕</button>
           </div>
           <button class="btn btn-primary" id="btnAddNewStick">
-            <span>➕</span> <span>Добавить стик</span>
+            <span>➕</span> <span>Добавить вкус</span>
           </button>
         </div>
 
@@ -106,8 +210,8 @@
             <span class="filter-label">Бренд:</span>
             <div class="pill-group" id="brandPills">
               <button class="pill active" data-brand="ALL">Все</button>
-              <button class="pill" data-brand="TEREA">TEREA (ILUMA)</button>
               <button class="pill" data-brand="HEETS">HEETS</button>
+              <button class="pill" data-brand="TEREA">TEREA</button>
               <button class="pill" data-brand="FIIT">FIIT</button>
               <button class="pill" data-brand="CUSTOM">Свои</button>
             </div>
@@ -118,10 +222,10 @@
             <span class="filter-label">Вкус:</span>
             <div class="pill-group" id="categoryPills">
               <button class="pill active" data-category="ALL">Все</button>
-              <button class="pill" data-category="tobacco">🍂 Табак</button>
-              <button class="pill" data-category="berry">🫐 Ягоды</button>
               <button class="pill" data-category="citrus">🍋 Цитрус / Чай</button>
+              <button class="pill" data-category="berry">🫐 Ягоды</button>
               <button class="pill" data-category="menthol">❄️ Ментол</button>
+              <button class="pill" data-category="tobacco">🍂 Табак</button>
               <button class="pill" data-category="capsule">💥 С капсулой</button>
             </div>
           </div>
@@ -141,12 +245,10 @@
           <div class="filter-group sort-group">
             <span class="filter-label">Сортировка:</span>
             <select id="sortSelect" class="custom-select">
-              <option value="mutual">❤️ По общему баллу пары</option>
-              <option value="u1">👤 По оценке: <span class="u1-label-sort">Парень</span></option>
-              <option value="u2">👤 По оценке: <span class="u2-label-sort">Девушка</span></option>
-              <option value="intensity">⚡ По крепости / насыщенности</option>
-              <option value="cooling">❄️ По холодку / ментолу</option>
-              <option value="name">🔤 По алфавиту</option>
+              <option value="mutual">❤️ По итоговому баллу пары</option>
+              <option value="u1">👤 По оценке: Андрей</option>
+              <option value="u2">👤 По оценке: Катя</option>
+              <option value="name">🔤 По названию</option>
             </select>
           </div>
         </div>
@@ -167,7 +269,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: LEADERBOARD ================= -->
+    <!-- ================= TAB 3: LEADERBOARD ================= -->
     <section class="tab-content" id="tab-leaderboard">
       <div class="leaderboard-container">
         <!-- Top Summary Cards -->
@@ -191,32 +293,28 @@
           </div>
         </div>
 
-        <!-- Two Columns: His Top vs Her Top -->
+        <!-- Two Columns: Andrey's Top vs Katya's Top -->
         <div class="dual-leaderboard-grid">
           <div class="leaderboard-col glass-card u1-border">
             <div class="col-header">
               <span class="col-avatar" id="leadU1Avatar">🧔‍♂️</span>
               <div>
-                <h3 id="leadU1Title">Топ Парня</h3>
-                <span class="subtext">Любимые вкусы по оценке</span>
+                <h3 id="leadU1Title">Топ Андрея</h3>
+                <span class="subtext">Любимые вкусы по критериям</span>
               </div>
             </div>
-            <div class="ranked-list" id="u1RankedList">
-              <!-- Items -->
-            </div>
+            <div class="ranked-list" id="u1RankedList"></div>
           </div>
 
           <div class="leaderboard-col glass-card u2-border">
             <div class="col-header">
               <span class="col-avatar" id="leadU2Avatar">👩‍🦰</span>
               <div>
-                <h3 id="leadU2Title">Топ Девушки</h3>
-                <span class="subtext">Любимые вкусы по оценке</span>
+                <h3 id="leadU2Title">Топ Кати</h3>
+                <span class="subtext">Любимые вкусы по критериям</span>
               </div>
             </div>
-            <div class="ranked-list" id="u2RankedList">
-              <!-- Items -->
-            </div>
+            <div class="ranked-list" id="u2RankedList"></div>
           </div>
         </div>
 
@@ -224,11 +322,11 @@
         <div class="mutual-top-section glass-card">
           <div class="section-title-row">
             <div>
-              <h3>❤️ Общий рейтинг пары (Вместе)</h3>
-              <p class="subtext">Сортировка по средней оценке двоих партнеров</p>
+              <h3>❤️ Общий рейтинг пары</h3>
+              <p class="subtext">Сортировка по общему итоговому баллу</p>
             </div>
             <button class="btn btn-outline" id="btnExportLeaderboard">
-              <span>📋</span> <span>Скопировать Топ в Telegram</span>
+              <span>📋</span> <span>Скопировать Топ для Telegram</span>
             </button>
           </div>
           <div class="table-responsive">
@@ -238,27 +336,23 @@
                   <th>#</th>
                   <th>Стик</th>
                   <th>Бренд</th>
-                  <th>Профиль</th>
-                  <th id="thU1Name">Парень</th>
-                  <th id="thU2Name">Девушка</th>
+                  <th id="thU1Name">Андрей</th>
+                  <th id="thU2Name">Катя</th>
                   <th>Итог</th>
                   <th>Вердикт</th>
                   <th>Действие</th>
                 </tr>
               </thead>
-              <tbody id="mutualLeaderboardBody">
-                <!-- Injected by JS -->
-              </tbody>
+              <tbody id="mutualLeaderboardBody"></tbody>
             </table>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= TAB 3: COMPARE & COMPATIBILITY ================= -->
+    <!-- ================= TAB 4: COMPARE & COMPATIBILITY ================= -->
     <section class="tab-content" id="tab-compare">
       <div class="compare-container">
-        <!-- Compatibility Meter Hero -->
         <div class="compatibility-hero glass-card">
           <div class="compat-visual">
             <div class="compat-circle" id="compatCircle">
@@ -268,7 +362,7 @@
           </div>
           <div class="compat-summary">
             <h2 id="compatHeadline">Анализируем ваши вкусы...</h2>
-            <p id="compatDescription">Оцените больше стиков вместе, чтобы мы смогли рассчитать ваш идеальный индекс гармонии вкусов!</p>
+            <p id="compatDescription">Оценивайте стики по 5 критериям, чтобы система рассчитала ваш индекс гармонии вкусов!</p>
             <div class="couple-stats-row">
               <div class="cstat-item">
                 <span class="cstat-num" id="statBothRated">0</span>
@@ -276,113 +370,82 @@
               </div>
               <div class="cstat-item">
                 <span class="cstat-num" id="statAgreements">0</span>
-                <span class="cstat-label">Полных совпадений</span>
+                <span class="cstat-label">Совпадений</span>
               </div>
               <div class="cstat-item">
                 <span class="cstat-num" id="statDisagreements">0</span>
-                <span class="cstat-label">Споров по вкусу</span>
+                <span class="cstat-label">Разногласий</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Category Preferences Breakdown -->
         <div class="breakdown-grid">
           <div class="glass-card">
-            <h3>🍂 Предпочтения по категориям</h3>
-            <p class="subtext">Что больше любит каждый из вас: табак, ментол или ягоды</p>
-            <div class="categories-pref-list" id="categoryPrefList">
-              <!-- Injected by JS -->
-            </div>
+            <h3>🍂 Предпочтения по критериям</h3>
+            <p class="subtext">Кто ставит более строгие оценки за комфорт горла или аромат</p>
+            <div class="categories-pref-list" id="categoryPrefList"></div>
           </div>
 
           <div class="glass-card">
-            <h3>💡 Рекомендация для вашей пары</h3>
-            <div id="coupleRecommendationBox" class="recommendation-content">
-              <!-- Injected by JS -->
-            </div>
+            <h3>💡 Рекомендация для покупки</h3>
+            <div id="coupleRecommendationBox" class="recommendation-content"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= TAB 4: WISHLIST (КУПИТЬ СНОВА) ================= -->
+    <!-- ================= TAB 5: WISHLIST ================= -->
     <section class="tab-content" id="tab-wishlist">
       <div class="wishlist-container glass-card">
         <div class="section-title-row">
           <div>
-            <h2>🛒 Список совместных покупок ("Купим снова")</h2>
-            <p class="subtext">Вкусы, которые получили вердикт «Купим снова» ❤️ от обоих или хотя бы от одного</p>
+            <h2>🛒 Список совместных покупок («Купим снова»)</h2>
+            <p class="subtext">Вкусы с высоким баллом или вердиктом ❤️</p>
           </div>
-          <div class="wishlist-actions">
-            <button class="btn btn-primary" id="btnShareWishlist">
-              <span>✈️</span> <span>Отправить список в мессенджер</span>
-            </button>
-          </div>
+          <button class="btn btn-primary" id="btnShareWishlist">
+            <span>✈️</span> <span>Отправить список в мессенджер</span>
+          </button>
         </div>
-        <div class="wishlist-grid" id="wishlistGrid">
-          <!-- Injected by JS -->
-        </div>
+        <div class="wishlist-grid" id="wishlistGrid"></div>
       </div>
     </section>
   </main>
 
-  <!-- ================= MODAL: RATE STICK ================= -->
+  <!-- ================= MODAL: 5-CRITERIA RATING MODAL ================= -->
   <div class="modal-backdrop" id="rateModal" style="display: none;">
     <div class="modal-card modal-lg">
       <button class="modal-close-btn" id="closeRateModal">✕</button>
+      
       <div class="modal-stick-header" id="modalStickHeader">
-        <div class="stick-tag-badge" id="modalStickBrand">TEREA</div>
-        <h2 id="modalStickTitle">Amber Selection</h2>
-        <p class="modal-stick-desc" id="modalStickDesc">Мягкий и насыщенный древесно-ореховый табачный бленд.</p>
-        
-        <div class="stick-spec-bars">
-          <div class="spec-bar-item">
-            <span>Крепость/Насыщенность:</span>
-            <div class="mini-bar"><div class="mini-bar-fill" id="modalBarIntensity"></div></div>
-            <span class="spec-val" id="modalValIntensity">7/10</span>
-          </div>
-          <div class="spec-bar-item">
-            <span>Холодок/Ментол:</span>
-            <div class="mini-bar"><div class="mini-bar-fill" id="modalBarCooling"></div></div>
-            <span class="spec-val" id="modalValCooling">0/10</span>
-          </div>
-          <div class="spec-bar-item">
-            <span>Аромат:</span>
-            <div class="mini-bar"><div class="mini-bar-fill" id="modalBarAroma"></div></div>
-            <span class="spec-val" id="modalValAroma">6/10</span>
-          </div>
-        </div>
+        <div class="stick-tag-badge" id="modalStickBrand">HEETS</div>
+        <h2 id="modalStickTitle">Green zing</h2>
+        <p class="modal-stick-desc" id="modalStickDesc">Яркий мятный, освежающий цитрусово-травяной бленд с нотами лайма.</p>
       </div>
 
       <div class="dual-eval-form">
-        <!-- USER 1 EVALUATION -->
+        <!-- USER 1 (АНДРЕЙ / АНДРЮША) -->
         <div class="user-eval-box u1-box">
           <div class="eval-user-heading">
             <span class="eval-avatar" id="modalU1Avatar">🧔‍♂️</span>
-            <span class="eval-user-name" id="modalU1Name">Парень</span>
+            <div class="eval-title-wrap">
+              <span class="eval-user-name" id="modalU1Name">Андрюша</span>
+              <span class="eval-subscore">Итог: <b id="u1CriteriaTotal">4,2</b></span>
+            </div>
           </div>
 
-          <div class="score-input-section">
-            <div class="score-display">
-              <span class="score-num" id="u1ScoreDisplay">0</span>
-              <span class="score-max">/10</span>
-            </div>
-            <input type="range" min="0" max="10" step="0.5" value="0" class="score-slider u1-slider" id="u1ScoreRange">
-            <div class="score-ticks">
-              <span>0 (Ужас)</span>
-              <span>5 (Норм)</span>
-              <span>10 (Бомба!)</span>
-            </div>
+          <!-- 5 Criteria Inputs -->
+          <div class="criteria-list-inputs" id="u1CriteriaInputs">
+            <!-- Dynamically generated 5 criteria score selectors -->
           </div>
 
           <div class="verdict-toggles">
             <label class="verdict-pill">
-              <input type="radio" name="u1Verdict" value="love">
+              <input type="radio" name="u1Verdict" value="love" checked>
               <span class="verdict-badge love">❤️ Купим снова</span>
             </label>
             <label class="verdict-pill">
-              <input type="radio" name="u1Verdict" value="neutral" checked>
+              <input type="radio" name="u1Verdict" value="neutral">
               <span class="verdict-badge neutral">🤔 Так себе</span>
             </label>
             <label class="verdict-pill">
@@ -392,38 +455,33 @@
           </div>
 
           <div class="comment-box">
-            <label>Впечатления и ноты вкуса:</label>
-            <textarea id="u1Notes" rows="2" placeholder="Что почувствовал? (например: приятный дымный вкус, идеален под кофе)..."></textarea>
+            <label>Личный комментарий:</label>
+            <textarea id="u1Notes" rows="2" placeholder="Заметки о вкусе, послевкусии, горле..."></textarea>
           </div>
         </div>
 
-        <!-- USER 2 EVALUATION -->
+        <!-- USER 2 (КАТЯ / КАТЮША) -->
         <div class="user-eval-box u2-box">
           <div class="eval-user-heading">
             <span class="eval-avatar" id="modalU2Avatar">👩‍🦰</span>
-            <span class="eval-user-name" id="modalU2Name">Девушка</span>
+            <div class="eval-title-wrap">
+              <span class="eval-user-name" id="modalU2Name">Катюша</span>
+              <span class="eval-subscore">Итог: <b id="u2CriteriaTotal">4,6</b></span>
+            </div>
           </div>
 
-          <div class="score-input-section">
-            <div class="score-display">
-              <span class="score-num" id="u2ScoreDisplay">0</span>
-              <span class="score-max">/10</span>
-            </div>
-            <input type="range" min="0" max="10" step="0.5" value="0" class="score-slider u2-slider" id="u2ScoreRange">
-            <div class="score-ticks">
-              <span>0 (Ужас)</span>
-              <span>5 (Норм)</span>
-              <span>10 (Бомба!)</span>
-            </div>
+          <!-- 5 Criteria Inputs -->
+          <div class="criteria-list-inputs" id="u2CriteriaInputs">
+            <!-- Dynamically generated 5 criteria score selectors -->
           </div>
 
           <div class="verdict-toggles">
             <label class="verdict-pill">
-              <input type="radio" name="u2Verdict" value="love">
+              <input type="radio" name="u2Verdict" value="love" checked>
               <span class="verdict-badge love">❤️ Купим снова</span>
             </label>
             <label class="verdict-pill">
-              <input type="radio" name="u2Verdict" value="neutral" checked>
+              <input type="radio" name="u2Verdict" value="neutral">
               <span class="verdict-badge neutral">🤔 Так себе</span>
             </label>
             <label class="verdict-pill">
@@ -433,17 +491,17 @@
           </div>
 
           <div class="comment-box">
-            <label>Впечатления и ноты вкуса:</label>
-            <textarea id="u2Notes" rows="2" placeholder="Что почувствовала? (например: слишком резкий, освежающий, приятный холодок)..."></textarea>
+            <label>Личный комментарий:</label>
+            <textarea id="u2Notes" rows="2" placeholder="Заметки о вкусе, аромате, прохладе..."></textarea>
           </div>
         </div>
       </div>
 
-      <!-- Mutual Result Preview in Modal -->
+      <!-- Mutual Average Summary Bar -->
       <div class="modal-summary-bar" id="modalSummaryBar">
         <div class="mutual-avg-box">
-          <span class="avg-label">Средний балл пары:</span>
-          <span class="avg-value" id="modalMutualAvg">--</span>
+          <span class="avg-label">Общий итог пары:</span>
+          <span class="avg-value" id="modalMutualAvg">4,4</span>
         </div>
         <div class="modal-actions-right">
           <button class="btn btn-secondary" id="btnCancelRate">Отмена</button>
@@ -458,79 +516,68 @@
     <div class="modal-card">
       <button class="modal-close-btn" id="closeAddStickModal">✕</button>
       <h2>➕ Добавить новый стик</h2>
-      <p class="subtext">Добавьте новый вкус Terea, Heets, Fiit или экзотические стики из других стран</p>
+      <p class="subtext">Добавьте новый вкус HEETS, TEREA, FIIT или редкие стики</p>
 
       <form id="addStickForm" class="custom-form">
         <div class="form-row">
           <div class="form-group flex-1">
             <label>Бренд</label>
             <select id="newStickBrand" class="custom-select">
-              <option value="TEREA">TEREA (ILUMA)</option>
               <option value="HEETS">HEETS</option>
+              <option value="TEREA">TEREA (ILUMA)</option>
               <option value="FIIT">FIIT</option>
               <option value="MC">MC / ДРУГИЕ</option>
             </select>
           </div>
           <div class="form-group flex-2">
             <label>Название вкуса *</label>
-            <input type="text" id="newStickName" placeholder="Например, Amelia Pearl, Silver..." required>
+            <input type="text" id="newStickName" placeholder="Например, Ruby Fuse, Cameo Wave..." required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group flex-1">
-            <label>Цвет пачки</label>
-            <input type="color" id="newStickColor" value="#9b59b6" class="color-picker-input">
+            <label>Цвет полосы/пачки</label>
+            <input type="color" id="newStickColor" value="#2ecc71" class="color-picker-input">
           </div>
           <div class="form-group flex-2">
             <label>Категория</label>
             <select id="newStickCategory" class="custom-select">
-              <option value="tobacco">🍂 Классический табак</option>
+              <option value="citrus">🍋 Цитрус и свежесть</option>
               <option value="berry">🫐 Ягоды и фрукты</option>
-              <option value="citrus">🍋 Цитрус и пряности</option>
-              <option value="menthol">❄️ Ментол и свежесть</option>
-              <option value="capsule">💥 С кнопкой / капсулой</option>
+              <option value="menthol">❄️ Ментол и прохлада</option>
+              <option value="tobacco">🍂 Классический табак</option>
+              <option value="capsule">💥 С капсулой / кнопкой</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
           <label>Краткое описание вкуса</label>
-          <input type="text" id="newStickDesc" placeholder="Например: спелая вишня с капсулой ледяной мяты">
+          <input type="text" id="newStickDesc" placeholder="Например: яркий мятный, освежающий бленд">
         </div>
 
         <div class="form-group">
           <label>Ноты вкуса (через запятую)</label>
-          <input type="text" id="newStickNotes" placeholder="Вишня, Мята, Плотный табак">
-        </div>
-
-        <div class="form-row sliders-row">
-          <div class="form-group flex-1">
-            <label>Крепость (1-10): <span id="newIntensityVal">5</span></label>
-            <input type="range" id="newStickIntensity" min="1" max="10" value="5">
-          </div>
-          <div class="form-group flex-1">
-            <label>Холодок (0-10): <span id="newCoolingVal">3</span></label>
-            <input type="range" id="newStickCooling" min="0" max="10" value="3">
-          </div>
+          <input type="text" id="newStickNotes" placeholder="Лайм, Мята, Свежесть">
         </div>
 
         <div class="form-actions-row">
           <button type="button" class="btn btn-secondary" id="btnCancelAddStick">Отмена</button>
-          <button type="submit" class="btn btn-primary">Создать стик</button>
+          <button type="submit" class="btn btn-primary">Создать вкус</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- ================= MODAL: BLIND TASTING MODE ================= -->
+  <!-- ================= MODAL: BLIND TASTING ================= -->
   <div class="modal-backdrop" id="blindTestModal" style="display: none;">
     <div class="modal-card modal-blind">
       <button class="modal-close-btn" id="closeBlindModal">✕</button>
       <div class="blind-header">
         <span class="blind-icon">🎭</span>
-        <h2>Слепая дегустация для пары</h2>
-        <p class="subtext">Один вставляет стик в держатель не показывая пачку — второй пробует и угадывает вкус!</p>
+        <h2>Слепая дегустация</h2>
+        <p class="subtext">Один вставляет стик в IQOS не показывая пачку — второй пробует и оценивает вслепую!</p>
       </div>
 
       <div class="mystery-box glass-card" id="mysteryCard">
@@ -538,39 +585,36 @@
           <div class="mystery-front">
             <div class="mystery-question">❓</div>
             <div class="mystery-title">Секретный стик выбран!</div>
-            <p>Вставьте стик в IQOS, сделайте затяжку и оцените вкус честно, без влияния бренда и дизайна пачки.</p>
+            <p>Сделайте затяжку и оцените вкус честно, без влияния цвета и бренда пачки.</p>
           </div>
-          <div class="mystery-back" id="mysteryBack">
-            <!-- Revealed stick info -->
-          </div>
+          <div class="mystery-back" id="mysteryBack"></div>
         </div>
       </div>
 
       <div class="blind-actions" id="blindActions">
-        <button class="btn btn-secondary" id="btnPickAnotherMystery">🎲 Выбрать другой вслепую</button>
+        <button class="btn btn-secondary" id="btnPickAnotherMystery">🎲 Другой вслепую</button>
         <button class="btn btn-primary btn-glow" id="btnRevealMystery">✨ Раскрыть тайну стика!</button>
       </div>
 
       <div class="blind-rate-hint" id="blindRateHint" style="display: none;">
-        <p>Теперь оцените его в каталоге с чистой совестью!</p>
         <button class="btn btn-primary" id="btnOpenModalFromBlind">Поставить оценку этому стику</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL: ROULETTE / "ЧТО ПОКУРИТЬ СЕЙЧАС" ================= -->
+  <!-- ================= MODAL: ROULETTE ================= -->
   <div class="modal-backdrop" id="rouletteModal" style="display: none;">
     <div class="modal-card modal-roulette">
       <button class="modal-close-btn" id="closeRouletteModal">✕</button>
       <div class="roulette-header">
         <span class="roulette-icon">🎰</span>
         <h2>Колесо фортуны стиков</h2>
-        <p class="subtext">Не можете решить, какую пачку открыть сегодня? Доверьтесь случаю!</p>
+        <p class="subtext">Не можете решить, какую пачку открыть? Доверьтесь случаю!</p>
       </div>
 
       <div class="roulette-filters-bar">
         <label><input type="radio" name="rouletteFilter" value="all" checked> Все вкусы</label>
-        <label><input type="radio" name="rouletteFilter" value="favorites"> Только наши ❤️ любимые</label>
+        <label><input type="radio" name="rouletteFilter" value="favorites"> Только ❤️ любимые</label>
         <label><input type="radio" name="rouletteFilter" value="unrated"> Только непробованные</label>
       </div>
 
@@ -588,24 +632,26 @@
   <div class="modal-backdrop" id="settingsModal" style="display: none;">
     <div class="modal-card">
       <button class="modal-close-btn" id="closeSettingsModal">✕</button>
-      <h2>⚙️ Настройки пары и синхронизация</h2>
+      <h2>⚙️ Настройки дегустаторов</h2>
       
       <div class="settings-section">
-        <h3>Имена и аватарки дегустаторов</h3>
+        <h3>Имена пары</h3>
         <div class="settings-users-grid">
           <div class="settings-user-card u1-border">
             <label>Дегустатор 1</label>
             <div class="input-with-avatar">
               <input type="text" id="settingU1Avatar" class="avatar-input" value="🧔‍♂️" maxlength="4">
-              <input type="text" id="settingU1Name" class="name-input" value="Парень" placeholder="Имя">
+              <input type="text" id="settingU1Name" class="name-input" value="Андрей" placeholder="Имя">
             </div>
+            <input type="text" id="settingU1ShortName" class="name-input" value="Андрюша" placeholder="Краткое имя (в карточке)" style="margin-top: 4px;">
           </div>
           <div class="settings-user-card u2-border">
             <label>Дегустатор 2</label>
             <div class="input-with-avatar">
               <input type="text" id="settingU2Avatar" class="avatar-input" value="👩‍🦰" maxlength="4">
-              <input type="text" id="settingU2Name" class="name-input" value="Девушка" placeholder="Имя">
+              <input type="text" id="settingU2Name" class="name-input" value="Катя" placeholder="Имя">
             </div>
+            <input type="text" id="settingU2ShortName" class="name-input" value="Катюша" placeholder="Краткое имя (в карточке)" style="margin-top: 4px;">
           </div>
         </div>
         <button class="btn btn-primary btn-sm" id="btnSaveCoupleNames">Сохранить имена</button>
@@ -613,7 +659,7 @@
 
       <div class="settings-section">
         <h3>Синхронизация между устройствами</h3>
-        <p class="subtext">Все оценки сохраняются локально в вашем браузере. Вы можете легко перенести или объединить данные между телефонами:</p>
+        <p class="subtext">Оценки хранятся в браузере. Вы можете перенести файл оценок на второй телефон:</p>
         <div class="backup-buttons-row">
           <button class="btn btn-secondary" id="btnExportJson">
             <span>💾</span> <span>Скачать резервную копию (JSON)</span>
@@ -625,22 +671,9 @@
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>Хостинг на GitHub Pages</h3>
-        <p class="subtext">Это приложение полностью статично и готово для бесплатного размещения на GitHub Pages:</p>
-        <div class="github-guide-box">
-          <ol>
-            <li>Создайте репозиторий на GitHub (например, <code>iqos-sticks</code>).</li>
-            <li>Загрузите файлы <code>index.html</code>, <code>style.css</code>, <code>data.js</code>, <code>app.js</code>.</li>
-            <li>В репозитории перейдите в <b>Settings &gt; Pages</b> и выберите <b>Branch: main</b>.</li>
-            <li>Откройте полученную ссылку на своих телефонах и сохраните как веб-приложение!</li>
-          </ol>
-        </div>
-      </div>
-
       <div class="settings-section danger-zone">
         <h3>Сброс данных</h3>
-        <button class="btn btn-danger btn-sm" id="btnResetAllData">Сбросить все оценки к начальным</button>
+        <button class="btn btn-danger btn-sm" id="btnResetAllData">Сбросить все оценки</button>
       </div>
     </div>
   </div>
