@@ -114,7 +114,7 @@
                 <button class="sheet-brand-btn" data-sheet-brand="ALL">Все</button>
               </div>
               <button class="btn btn-primary btn-sm btn-add-sheet" id="btnAddNewStickFromSheet">
-                <span>➕</span> <span>Добавить вкус</span>
+                <span>➕</span> <span class="hide-mobile-text">Добавить вкус</span>
               </button>
             </div>
           </div>
@@ -216,7 +216,7 @@
             <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">✕</button>
           </div>
           <button class="btn btn-primary" id="btnAddNewStick">
-            <span>➕</span> <span>Новый вкус</span>
+            <span>➕</span> <span class="hide-mobile-text">Новый вкус</span>
           </button>
         </div>
 
@@ -439,6 +439,21 @@
         <div class="stick-tag-badge" id="modalStickBrand">HEETS</div>
         <h2 id="modalStickTitle">Green zing</h2>
         <p class="modal-stick-desc" id="modalStickDesc">Яркий мятный, освежающий цитрусово-травяной бленд с нотами лайма.</p>
+      </div>
+
+      <!-- Mobile User Switcher (Segmented Control for small screens) -->
+      <div class="modal-user-switcher" id="modalUserSwitcher">
+        <button type="button" class="user-switch-btn active" data-switch-user="u1" id="btnSwitchU1">
+          <span id="switchU1Avatar">🧔‍♂️</span> <span id="switchU1Name">Андрюша</span>
+          <span class="user-switch-score" id="switchU1Score">4,2</span>
+        </button>
+        <button type="button" class="user-switch-btn" data-switch-user="u2" id="btnSwitchU2">
+          <span id="switchU2Avatar">👩‍🦰</span> <span id="switchU2Name">Катюша</span>
+          <span class="user-switch-score" id="switchU2Score">4,6</span>
+        </button>
+        <button type="button" class="user-switch-btn" data-switch-user="both" id="btnSwitchBoth">
+          <span>👥 Оба</span>
+        </button>
       </div>
 
       <div class="dual-eval-form">

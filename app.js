@@ -225,6 +225,29 @@ function initEventListeners() {
   // Export Leaderboard / Wishlist to clipboard
   document.getElementById("btnExportLeaderboard").addEventListener("click", copyLeaderboardToClipboard);
   document.getElementById("btnShareWishlist").addEventListener("click", copyWishlistToClipboard);
+
+  // Mobile Modal User Switcher
+  document.querySelectorAll(".user-switch-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".user-switch-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const targetUser = btn.getAttribute("data-switch-user");
+      const u1Box = document.querySelector(".u1-box");
+      const u2Box = document.querySelector(".u2-box");
+      if (!u1Box || !u2Box) return;
+
+      if (targetUser === "u1") {
+        u1Box.style.display = "flex";
+        u2Box.style.display = "none";
+      } else if (targetUser === "u2") {
+        u1Box.style.display = "none";
+        u2Box.style.display = "flex";
+      } else {
+        u1Box.style.display = "flex";
+        u2Box.style.display = "flex";
+      }
+    });
+  });
 }
 
 // ================= MODAL HELPERS =================
@@ -279,6 +302,17 @@ function updateUserInterfaceLabels() {
 
   document.getElementById("thU1Name").textContent = `${state.user1.avatar} ${u1Name}`;
   document.getElementById("thU2Name").textContent = `${state.user2.avatar} ${u2Name}`;
+
+  // Mobile modal switcher labels
+  const sU1A = document.getElementById("switchU1Avatar");
+  if (sU1A) sU1A.textContent = state.user1.avatar;
+  const sU1N = document.getElementById("switchU1Name");
+  if (sU1N) sU1N.textContent = u1Short;
+
+  const sU2A = document.getElementById("switchU2Avatar");
+  if (sU2A) sU2A.textContent = state.user2.avatar;
+  const sU2N = document.getElementById("switchU2Name");
+  if (sU2N) sU2N.textContent = u2Short;
 }
 
 // ================= TAB SWITCHING =================
@@ -355,15 +389,16 @@ function renderSpreadsheetView() {
 
     return `
       <tr class="${selectedClass}" onclick="selectStickForInspect('${stick.id}')">
-        <td>
+        <td class="td-stick-name">
           <span class="stick-badge-pill" style="${badgeStyle}">
             ${escapeHtml(stick.name)}
           </span>
+          <span class="mobile-stick-brand">${escapeHtml(stick.brand)}</span>
         </td>
-        <td>${escapeHtml(stick.description || '')}</td>
-        <td class="cell-score score-u2">${u2Total}</td>
-        <td class="cell-score score-u1">${u1Total}</td>
-        <td class="cell-score score-total">${mutual}</td>
+        <td class="td-stick-desc">${escapeHtml(stick.description || '')}</td>
+        <td class="cell-score score-u2 td-score td-score-u2"><span class="mobile-score-label">👩</span><span class="score-val">${u2Total || '—'}</span></td>
+        <td class="cell-score score-u1 td-score td-score-u1"><span class="mobile-score-label">🧔</span><span class="score-val">${u1Total || '—'}</span></td>
+        <td class="cell-score score-total td-score-total"><span class="mobile-score-label">❤️ Итог</span><span class="score-val">${mutual || '—'}</span></td>
       </tr>
     `;
   }).join("");
@@ -373,6 +408,12 @@ function selectStickForInspect(stickId) {
   state.selectedStickIdForInspect = stickId;
   renderSpreadsheetView();
   renderInspectCard(stickId);
+  if (window.innerWidth <= 992) {
+    const card = document.getElementById("inspectCard");
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
 }
 
 function renderInspectCard(stickId) {
@@ -463,6 +504,23 @@ function openRateModal(stickId) {
   document.getElementById("u2Notes").value = rating.u2?.notes || "";
 
   updateModalScoresCalculation();
+
+  // Reset mobile user switcher
+  if (window.innerWidth <= 768) {
+    document.querySelectorAll(".user-switch-btn").forEach(b => b.classList.remove("active"));
+    const btnU1 = document.getElementById("btnSwitchU1");
+    if (btnU1) btnU1.classList.add("active");
+    const u1Box = document.querySelector(".u1-box");
+    const u2Box = document.querySelector(".u2-box");
+    if (u1Box) u1Box.style.display = "flex";
+    if (u2Box) u2Box.style.display = "none";
+  } else {
+    const u1Box = document.querySelector(".u1-box");
+    const u2Box = document.querySelector(".u2-box");
+    if (u1Box) u1Box.style.display = "flex";
+    if (u2Box) u2Box.style.display = "flex";
+  }
+
   openModal("rateModal");
 }
 
@@ -521,6 +579,12 @@ function updateModalScoresCalculation() {
 
   const mutualAvg = (u1Avg + u2Avg) / 2;
   document.getElementById("modalMutualAvg").textContent = formatDecimal(mutualAvg);
+
+  // Update switcher score badges
+  const switchU1 = document.getElementById("switchU1Score");
+  if (switchU1) switchU1.textContent = formatDecimal(u1Avg);
+  const switchU2 = document.getElementById("switchU2Score");
+  if (switchU2) switchU2.textContent = formatDecimal(u2Avg);
 }
 
 function saveStickRating() {
