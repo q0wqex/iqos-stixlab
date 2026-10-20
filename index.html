@@ -2,9 +2,12 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>STIX LAB — Оценка стиков IQOS для Андрея и Кати</title>
   <meta name="description" content="Удобное приложение для совместной дегустации и оценки стиков IQOS (HEETS, TEREA, FIIT) по 5 точным критериям вкуса.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#08080a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -17,6 +20,7 @@
   <div class="ambient-glow glow-2"></div>
   <div class="ambient-glow glow-3"></div>
 
+  <!-- iOS 27 Sticky Dynamic Header -->
   <header class="app-header">
     <div class="header-container">
       <div class="brand">
@@ -26,7 +30,7 @@
         </div>
         <div class="brand-text">
           <div class="brand-title">STIX <span class="accent-text">LAB</span></div>
-          <div class="brand-subtitle">Дегустация стиков по 5 критериям</div>
+          <div class="brand-subtitle">Дегустация по 5 критериям</div>
         </div>
       </div>
 
@@ -54,7 +58,7 @@
           <span>🎲</span> <span class="hide-sm">Что покурить?</span>
         </button>
         <button class="btn btn-secondary btn-icon" id="btnBlindTest" title="Режим слепой дегустации">
-          <span>🎭</span> <span class="hide-sm">Слепой тест</span>
+          <span>🎭</span> <span class="hide-sm">Вслепую</span>
         </button>
         <button class="btn btn-secondary btn-icon" id="btnSettings" title="Настройки пары и данных">
           <span>⚙️</span>
@@ -62,34 +66,37 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <nav class="main-tabs-nav">
-      <button class="tab-btn active" data-tab="sheet">
-        <span class="tab-icon">📊</span>
-        <span>Таблица оценок</span>
-      </button>
-      <button class="tab-btn" data-tab="catalog">
-        <span class="tab-icon">📦</span>
-        <span>Карточки стиков</span>
-        <span class="tab-badge" id="catalogTotalBadge">0</span>
-      </button>
-      <button class="tab-btn" data-tab="leaderboard">
-        <span class="tab-icon">🏆</span>
-        <span>Наш Топ</span>
-      </button>
-      <button class="tab-btn" data-tab="compare">
-        <span class="tab-icon">⚖️</span>
-        <span>Совместимость</span>
-      </button>
-      <button class="tab-btn" data-tab="wishlist">
-        <span class="tab-icon">🛒</span>
-        <span>Купить снова (<span id="reorderCount">0</span>)</span>
-      </button>
+    <!-- iOS Native Segmented Tab Navigation -->
+    <nav class="main-tabs-nav" aria-label="Разделы приложения">
+      <div class="tabs-segmented-wrapper">
+        <button class="tab-btn active" data-tab="sheet">
+          <span class="tab-icon">📊</span>
+          <span class="tab-label">Таблица</span>
+        </button>
+        <button class="tab-btn" data-tab="catalog">
+          <span class="tab-icon">📦</span>
+          <span class="tab-label">Каталог</span>
+          <span class="tab-badge" id="catalogTotalBadge">0</span>
+        </button>
+        <button class="tab-btn" data-tab="leaderboard">
+          <span class="tab-icon">🏆</span>
+          <span class="tab-label">Наш Топ</span>
+        </button>
+        <button class="tab-btn" data-tab="compare">
+          <span class="tab-icon">⚖️</span>
+          <span class="tab-label">Баланс</span>
+        </button>
+        <button class="tab-btn" data-tab="wishlist">
+          <span class="tab-icon">🛒</span>
+          <span class="tab-label">Купим снова</span>
+          <span class="tab-badge-counter" id="reorderCount">0</span>
+        </button>
+      </div>
     </nav>
   </header>
 
   <main class="app-main">
-    <!-- ================= TAB 1: SPREADSHEET VIEW (LIKE USER'S EXCEL) ================= -->
+    <!-- ================= TAB 1: SPREADSHEET VIEW ================= -->
     <section class="tab-content active" id="tab-sheet">
       <div class="sheet-view-layout">
         <!-- Left: Spreadsheet Table -->
@@ -97,15 +104,17 @@
           <div class="sheet-header-row">
             <div class="sheet-title-group">
               <h2 class="sheet-title">Таблица дегустации</h2>
-              <p class="subtext">Кликните по любой строке, чтобы просмотреть или изменить баллы по 5 критериям</p>
+              <p class="subtext">Нажмите на строку, чтобы открыть оценку по 5 критериям</p>
             </div>
-            <div class="sheet-brand-filter">
-              <button class="sheet-brand-btn active" data-sheet-brand="HEETS">HEETS</button>
-              <button class="sheet-brand-btn" data-sheet-brand="TEREA">TEREA</button>
-              <button class="sheet-brand-btn" data-sheet-brand="FIIT">FIIT</button>
-              <button class="sheet-brand-btn" data-sheet-brand="ALL">Все</button>
-              <button class="btn btn-primary btn-sm" id="btnAddNewStickFromSheet" style="margin-left: 8px;">
-                <span>➕</span> Добавить вкус
+            <div class="sheet-actions-group">
+              <div class="sheet-brand-filter">
+                <button class="sheet-brand-btn active" data-sheet-brand="HEETS">HEETS</button>
+                <button class="sheet-brand-btn" data-sheet-brand="TEREA">TEREA</button>
+                <button class="sheet-brand-btn" data-sheet-brand="FIIT">FIIT</button>
+                <button class="sheet-brand-btn" data-sheet-brand="ALL">Все</button>
+              </div>
+              <button class="btn btn-primary btn-sm btn-add-sheet" id="btnAddNewStickFromSheet">
+                <span>➕</span> <span>Добавить вкус</span>
               </button>
             </div>
           </div>
@@ -114,29 +123,32 @@
             <table class="excel-style-table" id="excelTable">
               <thead>
                 <tr>
-                  <th style="width: 25%;">Вкус</th>
-                  <th style="width: 45%;">Описание</th>
+                  <th style="width: 26%;">Вкус</th>
+                  <th style="width: 44%;">Описание</th>
                   <th style="width: 10%; text-align: center;" class="th-u2" id="sheetThU2">Катя</th>
                   <th style="width: 10%; text-align: center;" class="th-u1" id="sheetThU1">Андрей</th>
                   <th style="width: 10%; text-align: center;" class="th-total">Итог</th>
                 </tr>
               </thead>
               <tbody id="excelTableBody">
-                <!-- Dynamically generated rows matching user's spreadsheet -->
+                <!-- Dynamically generated rows matching spreadsheet -->
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Right: Side Inspection Card for Selected Stick (like right table in screenshot) -->
+        <!-- Right: Side Inspection Card for Selected Stick -->
         <div class="sheet-side-col">
           <div class="inspect-card glass-card" id="inspectCard">
             <div class="inspect-stick-header" id="inspectStickHeader">
-              <span class="inspect-stick-title" id="inspectStickName">Green zing</span>
+              <div class="inspect-header-info">
+                <span class="inspect-label-pill">Выбранный стик</span>
+                <span class="inspect-stick-title" id="inspectStickName">Green zing</span>
+              </div>
               <button class="btn btn-primary btn-sm" id="btnInspectEditRate">✏️ Оценить</button>
             </div>
 
-            <!-- Andrey's criteria table -->
+            <!-- Andrey's criteria block -->
             <div class="user-criteria-block u1-criteria-bg">
               <div class="criteria-block-header u1-header" id="inspectU1Header">Андрюша</div>
               <table class="mini-criteria-table">
@@ -158,7 +170,7 @@
               </table>
             </div>
 
-            <!-- Katya's criteria table -->
+            <!-- Katya's criteria block -->
             <div class="user-criteria-block u2-criteria-bg">
               <div class="criteria-block-header u2-header" id="inspectU2Header">Катюша</div>
               <table class="mini-criteria-table">
@@ -182,7 +194,10 @@
 
             <!-- Mutual Total Box -->
             <div class="inspect-mutual-summary">
-              <span>Общий балл пары:</span>
+              <div class="mutual-summary-label">
+                <span class="mutual-heart-icon">❤️</span>
+                <span>Общий балл пары:</span>
+              </div>
               <span class="inspect-mutual-val" id="inspectMutualTotal">4,4</span>
             </div>
           </div>
@@ -193,17 +208,19 @@
     <!-- ================= TAB 2: CARDS CATALOG ================= -->
     <section class="tab-content" id="tab-catalog">
       <div class="controls-panel glass-card">
+        <!-- Search and Add in Top Row -->
         <div class="search-and-quick">
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Поиск стика (например, Green zing, Amber, лайм, ментол)..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Поиск (Green zing, Amber, лайм, ментол)..." autocomplete="off">
             <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">✕</button>
           </div>
           <button class="btn btn-primary" id="btnAddNewStick">
-            <span>➕</span> <span>Добавить вкус</span>
+            <span>➕</span> <span>Новый вкус</span>
           </button>
         </div>
 
+        <!-- Filter Row: Decluttered & Horizontal Scrolling on Touch -->
         <div class="filter-row">
           <!-- Brands Filter -->
           <div class="filter-group">
@@ -222,11 +239,11 @@
             <span class="filter-label">Вкус:</span>
             <div class="pill-group" id="categoryPills">
               <button class="pill active" data-category="ALL">Все</button>
-              <button class="pill" data-category="citrus">🍋 Цитрус / Чай</button>
+              <button class="pill" data-category="citrus">🍋 Цитрус</button>
               <button class="pill" data-category="berry">🫐 Ягоды</button>
               <button class="pill" data-category="menthol">❄️ Ментол</button>
               <button class="pill" data-category="tobacco">🍂 Табак</button>
-              <button class="pill" data-category="capsule">💥 С капсулой</button>
+              <button class="pill" data-category="capsule">💥 Капсула</button>
             </div>
           </div>
 
@@ -236,7 +253,7 @@
             <div class="pill-group" id="statusPills">
               <button class="pill active" data-status="ALL">Все</button>
               <button class="pill" data-status="both-rated">Оценены обоими</button>
-              <button class="pill" data-status="unrated">Непробованные</button>
+              <button class="pill" data-status="unrated">Ждут оценки</button>
               <button class="pill" data-status="favorites">❤️ В избранном</button>
             </div>
           </div>
@@ -245,7 +262,7 @@
           <div class="filter-group sort-group">
             <span class="filter-label">Сортировка:</span>
             <select id="sortSelect" class="custom-select">
-              <option value="mutual">❤️ По итоговому баллу пары</option>
+              <option value="mutual">❤️ По баллу пары</option>
               <option value="u1">👤 По оценке: Андрей</option>
               <option value="u2">👤 По оценке: Катя</option>
               <option value="name">🔤 По названию</option>
@@ -259,7 +276,7 @@
         <span id="resultsCount">Показано 0 стиков</span>
         <div class="quick-legend">
           <span class="legend-dot dot-rated"></span> Оценен
-          <span class="legend-dot dot-unrated"></span> Ждет оценки
+          <span class="legend-dot dot-unrated"></span> Не пробовали
         </div>
       </div>
 
@@ -326,7 +343,7 @@
               <p class="subtext">Сортировка по общему итоговому баллу</p>
             </div>
             <button class="btn btn-outline" id="btnExportLeaderboard">
-              <span>📋</span> <span>Скопировать Топ для Telegram</span>
+              <span>📋</span> <span>Скопировать для Telegram</span>
             </button>
           </div>
           <div class="table-responsive">
@@ -415,7 +432,8 @@
   <!-- ================= MODAL: 5-CRITERIA RATING MODAL ================= -->
   <div class="modal-backdrop" id="rateModal" style="display: none;">
     <div class="modal-card modal-lg">
-      <button class="modal-close-btn" id="closeRateModal">✕</button>
+      <div class="sheet-drag-handle"></div>
+      <button class="modal-close-btn" id="closeRateModal" aria-label="Закрыть">✕</button>
       
       <div class="modal-stick-header" id="modalStickHeader">
         <div class="stick-tag-badge" id="modalStickBrand">HEETS</div>
@@ -514,7 +532,8 @@
   <!-- ================= MODAL: ADD CUSTOM STICK ================= -->
   <div class="modal-backdrop" id="addStickModal" style="display: none;">
     <div class="modal-card">
-      <button class="modal-close-btn" id="closeAddStickModal">✕</button>
+      <div class="sheet-drag-handle"></div>
+      <button class="modal-close-btn" id="closeAddStickModal" aria-label="Закрыть">✕</button>
       <h2>➕ Добавить новый стик</h2>
       <p class="subtext">Добавьте новый вкус HEETS, TEREA, FIIT или редкие стики</p>
 
@@ -537,7 +556,7 @@
 
         <div class="form-row">
           <div class="form-group flex-1">
-            <label>Цвет полосы/пачки</label>
+            <label>Цвет пачки / полосы</label>
             <input type="color" id="newStickColor" value="#2ecc71" class="color-picker-input">
           </div>
           <div class="form-group flex-2">
@@ -573,7 +592,8 @@
   <!-- ================= MODAL: BLIND TASTING ================= -->
   <div class="modal-backdrop" id="blindTestModal" style="display: none;">
     <div class="modal-card modal-blind">
-      <button class="modal-close-btn" id="closeBlindModal">✕</button>
+      <div class="sheet-drag-handle"></div>
+      <button class="modal-close-btn" id="closeBlindModal" aria-label="Закрыть">✕</button>
       <div class="blind-header">
         <span class="blind-icon">🎭</span>
         <h2>Слепая дегустация</h2>
@@ -605,7 +625,8 @@
   <!-- ================= MODAL: ROULETTE ================= -->
   <div class="modal-backdrop" id="rouletteModal" style="display: none;">
     <div class="modal-card modal-roulette">
-      <button class="modal-close-btn" id="closeRouletteModal">✕</button>
+      <div class="sheet-drag-handle"></div>
+      <button class="modal-close-btn" id="closeRouletteModal" aria-label="Закрыть">✕</button>
       <div class="roulette-header">
         <span class="roulette-icon">🎰</span>
         <h2>Колесо фортуны стиков</h2>
@@ -631,7 +652,8 @@
   <!-- ================= MODAL: SETTINGS & BACKUP ================= -->
   <div class="modal-backdrop" id="settingsModal" style="display: none;">
     <div class="modal-card">
-      <button class="modal-close-btn" id="closeSettingsModal">✕</button>
+      <div class="sheet-drag-handle"></div>
+      <button class="modal-close-btn" id="closeSettingsModal" aria-label="Закрыть">✕</button>
       <h2>⚙️ Настройки дегустаторов</h2>
       
       <div class="settings-section">
@@ -643,7 +665,7 @@
               <input type="text" id="settingU1Avatar" class="avatar-input" value="🧔‍♂️" maxlength="4">
               <input type="text" id="settingU1Name" class="name-input" value="Андрей" placeholder="Имя">
             </div>
-            <input type="text" id="settingU1ShortName" class="name-input" value="Андрюша" placeholder="Краткое имя (в карточке)" style="margin-top: 4px;">
+            <input type="text" id="settingU1ShortName" class="name-input" value="Андрюша" placeholder="Краткое имя (в карточке)" style="margin-top: 6px;">
           </div>
           <div class="settings-user-card u2-border">
             <label>Дегустатор 2</label>
@@ -651,7 +673,7 @@
               <input type="text" id="settingU2Avatar" class="avatar-input" value="👩‍🦰" maxlength="4">
               <input type="text" id="settingU2Name" class="name-input" value="Катя" placeholder="Имя">
             </div>
-            <input type="text" id="settingU2ShortName" class="name-input" value="Катюша" placeholder="Краткое имя (в карточке)" style="margin-top: 4px;">
+            <input type="text" id="settingU2ShortName" class="name-input" value="Катюша" placeholder="Краткое имя (в карточке)" style="margin-top: 6px;">
           </div>
         </div>
         <button class="btn btn-primary btn-sm" id="btnSaveCoupleNames">Сохранить имена</button>
@@ -662,7 +684,7 @@
         <p class="subtext">Оценки хранятся в браузере. Вы можете перенести файл оценок на второй телефон:</p>
         <div class="backup-buttons-row">
           <button class="btn btn-secondary" id="btnExportJson">
-            <span>💾</span> <span>Скачать резервную копию (JSON)</span>
+            <span>💾</span> <span>Скачать копию (JSON)</span>
           </button>
           <label class="btn btn-secondary" style="cursor: pointer;">
             <span>📂</span> <span>Загрузить данные (JSON)</span>

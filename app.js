@@ -350,8 +350,8 @@ function renderSpreadsheetView() {
     const isSelected = stick.id === state.selectedStickIdForInspect;
     const selectedClass = isSelected ? "selected-row" : "";
 
-    // Badge styling matching the stick color or spreadsheet style
-    const badgeStyle = `background: ${stick.bgTint || 'rgba(255,255,255,0.08)'}; color: ${getTextColorForBg(stick.bgTint || '#1e293b')}; border-left: 5px solid ${stick.color};`;
+    // Badge styling matching iOS dark glass with crisp stick color accent
+    const badgeStyle = `background: rgba(255, 255, 255, 0.06); color: #ffffff; border-left: 3.5px solid ${stick.color};`;
 
     return `
       <tr class="${selectedClass}" onclick="selectStickForInspect('${stick.id}')">
@@ -381,10 +381,11 @@ function renderInspectCard(stickId) {
 
   const r = state.ratings[stickId] || {};
 
-  // Header
+  // Header with iOS specular glass gradient and accent
   const headerElem = document.getElementById("inspectStickHeader");
-  headerElem.style.background = stick.bgTint || "#d4edda";
-  headerElem.style.color = getTextColorForBg(stick.bgTint || "#d4edda");
+  headerElem.style.background = `linear-gradient(135deg, ${stick.color}24, rgba(255, 255, 255, 0.04))`;
+  headerElem.style.borderLeft = `4px solid ${stick.color}`;
+  headerElem.style.color = "#ffffff";
   document.getElementById("inspectStickName").textContent = stick.name;
 
   // Andrey (u1)
