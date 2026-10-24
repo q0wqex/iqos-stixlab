@@ -360,6 +360,13 @@ html, body {
   box-shadow: 0 3px 12px rgba(255, 159, 10, 0.35);
 }
 
+.filter-tab.filter-unrated.active {
+  background: linear-gradient(135deg, #70a1ff, #1e90ff);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 12px rgba(30, 144, 255, 0.35);
+}
+
 /* ==========================================================================
    Main Sticks List & Cards
    ========================================================================== */
@@ -535,6 +542,51 @@ html, body {
   background: rgba(255, 255, 255, 0.04);
   padding: 1px 6px;
   border-radius: var(--radius-xs);
+}
+
+.card-category-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1.5px 5px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sheet-category-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.card-desc-line {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.card-user-note {
+  font-size: 11px;
+  color: #ffeaa7;
+  background: rgba(255, 177, 66, 0.1);
+  border-left: 2px solid #ffa502;
+  padding: 2px 7px;
+  border-radius: 0 4px 4px 0;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Stick Card Scores */
@@ -946,11 +998,11 @@ html, body {
   color: var(--text-secondary);
 }
 
-/* Star / Score Buttons Row (1 to 5) */
+/* Star / Score Buttons Row (0 to 5) */
 .scores-selector {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
 }
 
 .score-pill-btn {
@@ -1047,8 +1099,8 @@ html, body {
 .both-scores-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
 }
 
 .both-mini-btn {

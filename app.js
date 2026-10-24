@@ -6,13 +6,13 @@
   "use strict";
 
   // Storage key
-  const STORAGE_KEY = "iqos_stixlab_v2_ratings";
+  const STORAGE_KEY = "iqos_stixlab_v3_ratings";
 
   // Application State
   const state = {
     sticks: STICKS_DATA || [],
     ratings: {},
-    currentFilter: "ALL", // 'ALL' | 'HEETS' | 'FIIT' | 'TOP'
+    currentFilter: "ALL", // 'ALL' | 'HEETS' | 'FIIT' | 'TOP' | 'UNRATED'
     searchQuery: "",
     activeStickId: null,
     activeTaster: "u1", // 'u1' (Andrey) | 'u2' (Katya) | 'both' (Together)
@@ -34,6 +34,7 @@
     countHeets: document.getElementById("countHeets"),
     countFiit: document.getElementById("countFiit"),
     countTop: document.getElementById("countTop"),
+    countUnrated: document.getElementById("countUnrated"),
     listMeta: document.getElementById("listMeta"),
     metaText: document.getElementById("metaText"),
 
@@ -49,6 +50,7 @@
     closeSheetBtn: document.getElementById("closeSheetBtn"),
     sheetColorStrip: document.getElementById("sheetColorStrip"),
     sheetBrandBadge: document.getElementById("sheetBrandBadge"),
+    sheetCategoryBadge: document.getElementById("sheetCategoryBadge"),
     sheetCapsuleBadge: document.getElementById("sheetCapsuleBadge"),
     sheetStickName: document.getElementById("sheetStickName"),
     sheetStickDesc: document.getElementById("sheetStickDesc"),
@@ -107,8 +109,19 @@
       if (stored) {
         state.ratings = JSON.parse(stored);
       } else {
-        // First launch: pre-seed with initial demo ratings for couple
-        state.ratings = JSON.parse(JSON.stringify(INITIAL_DEMO_RATINGS || {}));
+        // Pre-seed with actual initial ratings from Andrey and Katya's tasting table
+        const base = JSON.parse(JSON.stringify(INITIAL_DEMO_RATINGS || {}));
+        const oldStored = localStorage.getItem("iqos_stixlab_v2_ratings");
+        if (oldStored) {
+          try {
+            const oldData = JSON.parse(oldStored);
+            state.ratings = { ...base, ...oldData };
+          } catch (_) {
+            state.ratings = base;
+          }
+        } else {
+          state.ratings = base;
+        }
         saveRatings();
       }
     } catch (e) {
@@ -131,7 +144,8 @@
 
   function calcUserAverage(userScores) {
     if (!userScores) return null;
-    const values = Object.values(userScores).filter(v => typeof v === "number" && v >= 1 && v <= 5);
+    // Scores range from 0 to 5 (0 means "No/Absent", e.g. no flavor intensity or finish)
+    const values = Object.values(userScores).filter(v => typeof v === "number" && v >= 0 && v <= 5);
     if (values.length === 0) return null;
     const sum = values.reduce((acc, cur) => acc + cur, 0);
     return Math.round((sum / values.length) * 10) / 10;
@@ -186,7 +200,7 @@
   function getFilteredSticks() {
     let list = [...state.sticks];
 
-    // Filter by Brand / Top
+    // Filter by Brand / Top / Unrated
     if (state.currentFilter === "HEETS") {
       list = list.filter(s => s.brand === "HEETS");
     } else if (state.currentFilter === "FIIT") {
@@ -197,6 +211,12 @@
         .map(s => ({ ...s, scores: calcStickScores(s.id) }))
         .filter(s => s.scores.isRated)
         .sort((a, b) => (b.scores.mutual || 0) - (a.scores.mutual || 0));
+      return applySearchFilter(list);
+    } else if (state.currentFilter === "UNRATED") {
+      // Unrated shows only sticks that have not been tasted yet
+      list = list
+        .map(s => ({ ...s, scores: calcStickScores(s.id) }))
+        .filter(s => !s.scores.isRated);
       return applySearchFilter(list);
     }
 
@@ -213,10 +233,11 @@
     return list.filter(s => {
       const matchName = s.name.toLowerCase().includes(q);
       const matchBrand = s.brand.toLowerCase().includes(q);
-      const matchTag = s.tag.toLowerCase().includes(q);
-      const matchDesc = s.desc.toLowerCase().includes(q);
-      const matchNotes = s.notes.some(n => n.toLowerCase().includes(q));
-      return matchName || matchBrand || matchTag || matchDesc || matchNotes;
+      const matchCategory = (s.category || "").toLowerCase().includes(q);
+      const matchTag = (s.tag || "").toLowerCase().includes(q);
+      const matchDesc = (s.desc || "").toLowerCase().includes(q);
+      const matchNotes = (s.notes || []).some(n => n.toLowerCase().includes(q));
+      return matchName || matchBrand || matchCategory || matchTag || matchDesc || matchNotes;
     });
   }
 
@@ -231,19 +252,25 @@
       if (scores.isRated) ratedCount++;
     });
 
+    const unratedCount = Math.max(0, totalAll - ratedCount);
+
     el.countAll.textContent = totalAll;
     el.countHeets.textContent = totalHeets;
     el.countFiit.textContent = totalFiit;
     el.countTop.textContent = ratedCount;
+    if (el.countUnrated) el.countUnrated.textContent = unratedCount;
   }
 
   function renderSticksList() {
     const filtered = getFilteredSticks();
 
-    // Toggle meta banner if in TOP view
+    // Toggle meta banner if in TOP or UNRATED view
     if (state.currentFilter === "TOP") {
       el.listMeta.style.display = "flex";
-      el.metaText.textContent = `Ранжировано по среднему баллу пары (${filtered.length} вкусов)`;
+      el.metaText.textContent = `Рейтинг пары от высшего к низшему (${filtered.length} вкусов)`;
+    } else if (state.currentFilter === "UNRATED") {
+      el.listMeta.style.display = "flex";
+      el.metaText.textContent = `Осталось продегустировать: ${filtered.length} вкусов`;
     } else {
       el.listMeta.style.display = "none";
     }
@@ -275,10 +302,15 @@
       }
 
       // Notes Chips
-      const notesHtml = stick.notes
+      const notesHtml = (stick.notes || [])
         .slice(0, 3)
         .map(n => `<span class="note-chip">${escapeHtml(n)}</span>`)
         .join("");
+
+      // User tasting comment snippet
+      const userNoteHtml = scores.notes
+        ? `<div class="card-user-note">💬 ${escapeHtml(scores.notes)}</div>`
+        : "";
 
       // Scores column
       let scoreBadgeHtml = "";
@@ -308,6 +340,7 @@
 
       const brandClass = stick.brand === "HEETS" ? "brand-heets" : "brand-fiit";
       const capsuleDot = stick.hasCapsule ? `<span class="capsule-dot" title="С капсулой">🔘</span>` : "";
+      const categoryTag = stick.category ? `<span class="card-category-badge">${escapeHtml(stick.category)}</span>` : "";
 
       return `
         <article class="stick-card" data-id="${stick.id}" style="--card-accent-grad: ${stick.colorGrad}; --swatch-shadow: ${stick.color}40">
@@ -316,12 +349,15 @@
           <div class="card-details">
             <div class="card-title-row">
               <span class="brand-badge ${brandClass}">${stick.brand}</span>
+              ${categoryTag}
               ${capsuleDot}
               <h3 class="card-stick-name">${escapeHtml(stick.name)}</h3>
             </div>
+            <div class="card-desc-line">${escapeHtml(stick.desc || "")}</div>
             <div class="card-notes-row">
               ${notesHtml}
             </div>
+            ${userNoteHtml}
           </div>
           <div class="card-scores-col">
             ${scoreBadgeHtml}
@@ -356,12 +392,16 @@
     el.sheetColorStrip.style.setProperty("--sheet-color", stick.color);
     el.sheetBrandBadge.textContent = stick.brand;
     el.sheetBrandBadge.className = `sheet-brand-badge ${stick.brand === "HEETS" ? "brand-heets" : "brand-fiit"}`;
+    if (el.sheetCategoryBadge) {
+      el.sheetCategoryBadge.textContent = stick.category || "";
+      el.sheetCategoryBadge.style.display = stick.category ? "inline-block" : "none";
+    }
     el.sheetCapsuleBadge.style.display = stick.hasCapsule ? "inline-block" : "none";
     el.sheetStickName.textContent = stick.name;
     el.sheetStickDesc.textContent = stick.desc;
 
     // Render notes pills
-    el.sheetNotesList.innerHTML = stick.notes
+    el.sheetNotesList.innerHTML = (stick.notes || [])
       .map(n => `<span class="sheet-note-item">${escapeHtml(n)}</span>`)
       .join("");
 
@@ -421,11 +461,13 @@
     const currentScores = state.editBuffer[taster] || {};
 
     const html = CRITERIA.map(crit => {
-      const currentVal = currentScores[crit.id] || null;
-      const scoreBadgeText = currentVal ? `${currentVal} / 5` : "Не оценено";
-      const scoredClass = currentVal ? "scored" : "";
+      const currentVal = (currentScores[crit.id] !== undefined && currentScores[crit.id] !== null)
+        ? currentScores[crit.id]
+        : null;
+      const scoreBadgeText = currentVal !== null ? `${currentVal} / 5` : "Не оценено";
+      const scoredClass = currentVal !== null ? "scored" : "";
 
-      const buttonsHtml = [1, 2, 3, 4, 5].map(num => {
+      const buttonsHtml = [0, 1, 2, 3, 4, 5].map(num => {
         const isActive = currentVal === num ? "active" : "";
         return `
           <button type="button" class="score-pill-btn ${isActive}" data-crit="${crit.id}" data-score="${num}">
@@ -463,16 +505,16 @@
     const u2Scores = state.editBuffer.u2 || {};
 
     const html = CRITERIA.map(crit => {
-      const u1Val = u1Scores[crit.id] || null;
-      const u2Val = u2Scores[crit.id] || null;
+      const u1Val = (u1Scores[crit.id] !== undefined && u1Scores[crit.id] !== null) ? u1Scores[crit.id] : null;
+      const u2Val = (u2Scores[crit.id] !== undefined && u2Scores[crit.id] !== null) ? u2Scores[crit.id] : null;
 
-      const u1Buttons = [1, 2, 3, 4, 5].map(num => `
+      const u1Buttons = [0, 1, 2, 3, 4, 5].map(num => `
         <button type="button" class="both-mini-btn ${u1Val === num ? "active-u1" : ""}" data-dual-taster="u1" data-crit="${crit.id}" data-score="${num}">
           ${num}
         </button>
       `).join("");
 
-      const u2Buttons = [1, 2, 3, 4, 5].map(num => `
+      const u2Buttons = [0, 1, 2, 3, 4, 5].map(num => `
         <button type="button" class="both-mini-btn ${u2Val === num ? "active-u2" : ""}" data-dual-taster="u2" data-crit="${crit.id}" data-score="${num}">
           ${num}
         </button>
@@ -508,8 +550,9 @@
 
   function getScoreShortLabel(score) {
     switch (score) {
+      case 0: return "Нет";
       case 1: return "Плохо";
-      case 2: return "Так себе";
+      case 2: return "Слабо";
       case 3: return "Норм";
       case 4: return "Хорошо";
       case 5: return "Топ";
