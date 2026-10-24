@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-  <title>STIX LAB — Дегустация HEETS & FIIT</title>
-  <meta name="description" content="Минималистичное приложение для совместной дегустации и оценки стиков IQOS (HEETS и FIIT) для Андрея и Кати.">
+  <title>STIX LAB — Дегустация и рейтинг HEETS & FIIT</title>
+  <meta name="description" content="Премиальное приложение для совместной дегустации, оценки и анализа стиков IQOS (HEETS и FIIT) для Андрея и Кати.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#070709">
@@ -12,42 +12,90 @@
   <!-- Apple & Google Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
 </head>
 <body>
   <div class="app-viewport">
-    <!-- Header -->
+    <!-- Ambient Background Glow Accents -->
+    <div class="ambient-glow glow-1" aria-hidden="true"></div>
+    <div class="ambient-glow glow-2" aria-hidden="true"></div>
+
+    <!-- Header Navigation -->
     <header class="app-header">
       <div class="header-inner">
+        <!-- Brand & Quick Meta -->
         <div class="header-branding">
           <div class="logo-mark">
-            <span class="logo-spark">✨</span>
+            <span class="logo-spark">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                <path d="M5 3v4"/>
+                <path d="M19 17v4"/>
+                <path d="M3 5h4"/>
+                <path d="M17 19h4"/>
+              </svg>
+            </span>
             <div class="logo-text">
               <span class="logo-title">STIX</span>
               <span class="logo-badge">LAB</span>
             </div>
           </div>
-          <div class="couple-chips">
+
+          <!-- Couple Profile Capsule -->
+          <div class="couple-chips" title="Совместная дегустация Андрея и Кати">
             <span class="partner-badge badge-andrey">
-              <span class="avatar">🧔</span>
+              <span class="avatar-dot avatar-andrey">A</span>
               <span class="p-name">Андрей</span>
             </span>
-            <span class="couple-heart">❤️</span>
+            <span class="couple-heart" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+            </span>
             <span class="partner-badge badge-katya">
-              <span class="avatar">👩</span>
+              <span class="avatar-dot avatar-katya">K</span>
               <span class="p-name">Катя</span>
             </span>
           </div>
-          <button id="btnOpenMenu" class="icon-btn-header" aria-label="Меню и синхронизация" title="Настройки и экспорт">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="19" cy="12" r="1"></circle>
-              <circle cx="5" cy="12" r="1"></circle>
-            </svg>
-          </button>
+
+          <!-- Header Actions -->
+          <div class="header-actions">
+            <!-- Theme Toggle -->
+            <button id="btnToggleTheme" class="icon-btn-header" aria-label="Сменить тему оформления" title="Переключить тему (Светлая / Тёмная)">
+              <svg class="theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+              </svg>
+              <svg class="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path>
+                <path d="M2 12h2"></path>
+                <path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path>
+                <path d="m19.07 4.93-1.41 1.41"></path>
+              </svg>
+            </button>
+
+            <!-- Menu & Settings Button -->
+            <button id="btnOpenMenu" class="icon-btn-header" aria-label="Меню, аналитика и синхронизация" title="Настройки, статистика и экспорт">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Search Bar -->
@@ -57,8 +105,13 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="searchInput" placeholder="Поиск по названию или нотам (цитрус, ментол, ягоды)..." autocomplete="off" autocorrect="off" spellcheck="false">
-            <button id="clearSearchBtn" class="search-clear-btn" aria-label="Очистить поиск" style="display: none;">✕</button>
+            <input type="text" id="searchInput" placeholder="Поиск стика или вкуса (ягоды, мята, цитрус, табак)..." autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Поиск по коллекции">
+            <button id="clearSearchBtn" class="search-clear-btn" aria-label="Очистить поиск" style="display: none;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -77,11 +130,23 @@
             <span class="tab-counter" id="countFiit">0</span>
           </button>
           <button class="filter-tab filter-top" data-filter="TOP">
-            <span>🏆 Рейтинг</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <span>Рейтинг</span>
             <span class="tab-counter" id="countTop">0</span>
           </button>
           <button class="filter-tab filter-unrated" data-filter="UNRATED">
-            <span>⏳ Осталось</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Осталось</span>
             <span class="tab-counter" id="countUnrated">0</span>
           </button>
         </nav>
@@ -90,26 +155,41 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- List Meta Info / Top Banner if in TOP tab -->
+      <!-- Section: Dynamic Tasting Hero Dashboard (Appears in 'ALL' view with no active search) -->
+      <section class="hero-dashboard" id="heroDashboard" aria-label="Дегустационный дашборд">
+        <!-- Rendered by app.js: Overall top stick, favorites & opinion split -->
+      </section>
+
+      <!-- Section Title & Meta Header -->
       <div class="list-meta" id="listMeta" style="display: none;">
+        <span class="meta-icon" id="metaIcon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </span>
         <span class="meta-text" id="metaText">Рейтинг пары от высшего к низшему</span>
       </div>
 
-      <!-- Sticks List -->
+      <!-- Sticks Grid / Collection -->
       <div class="sticks-grid" id="sticksGrid">
         <!-- Rendered by app.js -->
       </div>
 
       <!-- Empty State -->
       <div class="empty-state" id="emptyState" style="display: none;">
-        <div class="empty-emoji">🔍</div>
+        <div class="empty-icon-wrap">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
         <h3 class="empty-title">Ничего не найдено</h3>
-        <p class="empty-desc">Попробуйте изменить запрос или сбросить фильтры</p>
-        <button id="resetSearchBtn" class="empty-btn">Сбросить поиск</button>
+        <p class="empty-desc">Попробуйте изменить поисковый запрос или переключить категорию стиков</p>
+        <button id="resetSearchBtn" class="empty-btn">Сбросить фильтры</button>
       </div>
     </main>
 
-    <!-- Bottom Sheet Modal for 5-Criteria Rating -->
+    <!-- Bottom Sheet Modal for 5-Criteria Tasting & Rating -->
     <div class="sheet-backdrop" id="rateBackdrop" aria-hidden="true">
       <div class="bottom-sheet" id="bottomSheet" role="dialog" aria-modal="true" aria-labelledby="sheetStickName">
         <!-- Top Drag Pill Handle -->
@@ -124,35 +204,52 @@
             <div class="sheet-badge-row">
               <span class="sheet-brand-badge" id="sheetBrandBadge">HEETS</span>
               <span class="sheet-category-badge" id="sheetCategoryBadge">Ароматические</span>
-              <span class="sheet-capsule-badge" id="sheetCapsuleBadge" style="display: none;">🔘 Капсула</span>
+              <span class="sheet-capsule-badge" id="sheetCapsuleBadge" style="display: none;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="8"></circle>
+                </svg>
+                Капсула
+              </span>
             </div>
             <h2 class="sheet-stick-title" id="sheetStickName">Green Zing</h2>
             <p class="sheet-stick-desc" id="sheetStickDesc">Освежающий травяной бленд</p>
             <div class="sheet-notes-list" id="sheetNotesList"></div>
           </div>
           <button class="sheet-close-btn" id="closeSheetBtn" aria-label="Закрыть шторку">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
 
+        <!-- Criteria Comparison Radar / Bar Preview (If already rated by both) -->
+        <div class="criteria-comparison-strip" id="criteriaComparisonStrip" style="display: none;">
+          <!-- Dynamically populated comparison bars -->
+        </div>
+
         <!-- Segmented Switcher: Andrey / Katya / Both -->
         <div class="taster-switcher-wrap">
           <div class="segmented-control" role="tablist">
             <button class="segment-btn active segment-u1" id="tabU1" role="tab" aria-selected="true" data-taster="u1">
-              <span class="taster-avatar">🧔</span>
+              <span class="avatar-dot avatar-andrey avatar-mini">A</span>
               <span class="taster-label">Андрей</span>
               <span class="taster-avg-badge" id="tabAvgU1">—</span>
             </button>
             <button class="segment-btn segment-u2" id="tabU2" role="tab" aria-selected="false" data-taster="u2">
-              <span class="taster-avatar">👩</span>
+              <span class="avatar-dot avatar-katya avatar-mini">K</span>
               <span class="taster-label">Катя</span>
               <span class="taster-avg-badge" id="tabAvgU2">—</span>
             </button>
             <button class="segment-btn segment-both" id="tabBoth" role="tab" aria-selected="false" data-taster="both">
-              <span class="taster-avatar">👥</span>
+              <span class="avatar-dot avatar-mutual avatar-mini">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
               <span class="taster-label">Вместе</span>
               <span class="taster-avg-badge badge-mutual" id="tabAvgBoth">—</span>
             </button>
@@ -166,8 +263,13 @@
 
           <!-- Tasting Note Field -->
           <div class="tasting-notes-box">
-            <label for="stickCommentInput" class="notes-field-label">💬 Заметка дегустации пары:</label>
-            <textarea id="stickCommentInput" rows="2" placeholder="Особенности вкуса, впечатления, к чему подходит..."></textarea>
+            <div class="notes-header-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <label for="stickCommentInput" class="notes-field-label">Заметка дегустации пары:</label>
+            </div>
+            <textarea id="stickCommentInput" rows="2" placeholder="Особенности вкуса, впечатления, к чему подходит, нюансы аромата..."></textarea>
           </div>
         </div>
 
@@ -175,15 +277,15 @@
         <div class="sheet-footer">
           <div class="footer-scores-summary">
             <div class="summary-card card-andrey">
-              <span class="s-label">🧔 Андрей</span>
+              <span class="s-label">Андрей</span>
               <span class="s-num" id="sheetSummaryU1">—</span>
             </div>
             <div class="summary-card card-katya">
-              <span class="s-label">👩 Катя</span>
+              <span class="s-label">Катя</span>
               <span class="s-num" id="sheetSummaryU2">—</span>
             </div>
             <div class="summary-card card-mutual">
-              <span class="s-label">💜 Общий</span>
+              <span class="s-label">Общий балл</span>
               <span class="s-num" id="sheetSummaryMutual">—</span>
             </div>
           </div>
@@ -192,25 +294,42 @@
             <button id="btnResetStickRating" class="btn-clear-stick" title="Очистить оценки этого стика">Сброс</button>
             <button id="btnSaveStickRating" class="btn-save-stick">
               <span>Готово</span>
-              <span class="check-icon">✓</span>
+              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Options & Data Management Modal -->
+    <!-- Options & Analytics Management Modal -->
     <div class="sheet-backdrop" id="menuBackdrop" aria-hidden="true">
-      <div class="menu-modal" id="menuModal" role="dialog" aria-modal="true">
+      <div class="menu-modal" id="menuModal" role="dialog" aria-modal="true" aria-labelledby="modalSettingsTitle">
         <div class="modal-header">
-          <h3 class="modal-title">STIX LAB Настройки</h3>
-          <button class="sheet-close-btn" id="closeMenuBtn" aria-label="Закрыть">✕</button>
+          <div class="modal-title-wrap">
+            <h3 class="modal-title" id="modalSettingsTitle">Аналитика и настройки</h3>
+            <span class="modal-subtitle">STIX LAB v3.0 • Apple Edition</span>
+          </div>
+          <button class="sheet-close-btn" id="closeMenuBtn" aria-label="Закрыть">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         <div class="modal-body">
-          <!-- Pair Stats -->
+          <!-- Pair Tasting Analytics Box -->
           <div class="stats-overview-box">
-            <h4 class="settings-sec-title">📊 Статистика дегустации</h4>
+            <h4 class="settings-sec-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              Статистика пары
+            </h4>
             <div class="stats-grid">
               <div class="stat-item">
                 <span class="stat-val" id="statTastedCount">0</span>
@@ -220,46 +339,110 @@
                 <span class="stat-val" id="statRemainingCount">0</span>
                 <span class="stat-lbl">Осталось</span>
               </div>
-              <div class="stat-item">
+              <div class="stat-item stat-item-wide">
                 <span class="stat-val" id="statFavoriteTaste">—</span>
-                <span class="stat-lbl">Фаворит</span>
+                <span class="stat-lbl">Главный фаворит</span>
               </div>
+            </div>
+
+            <!-- Opinion Agreement Metric -->
+            <div class="agreement-metric-row">
+              <div class="metric-label-group">
+                <span class="metric-title">Сходство вкусов пары:</span>
+                <span class="metric-value" id="statAgreementVal">100%</span>
+              </div>
+              <div class="metric-progress-track">
+                <div class="metric-progress-fill" id="statAgreementBar" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme Selection Section -->
+          <div class="settings-sec">
+            <h4 class="settings-sec-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              Внешний вид
+            </h4>
+            <div class="theme-segmented-group" id="themeSegmented">
+              <button type="button" class="theme-seg-btn active" data-theme-val="dark">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                Тёмная
+              </button>
+              <button type="button" class="theme-seg-btn" data-theme-val="light">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line></svg>
+                Светлая
+              </button>
             </div>
           </div>
 
           <!-- Data Actions -->
           <div class="settings-sec">
-            <h4 class="settings-sec-title">💾 Синхронизация данных</h4>
+            <h4 class="settings-sec-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Синхронизация и данные
+            </h4>
             <div class="settings-buttons">
               <button id="btnExportJson" class="settings-action-btn">
-                <span class="btn-icon">📤</span>
+                <div class="btn-action-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
                 <span class="btn-text">
                   <strong>Экспорт в JSON</strong>
-                  <small>Сохранить файл или скопировать оценки</small>
+                  <small>Сохранить файл и скопировать оценки</small>
                 </span>
               </button>
+
               <button id="btnImportJson" class="settings-action-btn">
-                <span class="btn-icon">📥</span>
+                <div class="btn-action-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </div>
                 <span class="btn-text">
                   <strong>Импорт из JSON</strong>
-                  <small>Загрузить оценки на другое устройство</small>
+                  <small>Загрузить оценки с другого устройства</small>
                 </span>
               </button>
               <input type="file" id="fileImportInput" accept=".json" style="display: none;">
 
               <button id="btnResetToDefaults" class="settings-action-btn btn-danger-action">
-                <span class="btn-icon">🔄</span>
+                <div class="btn-action-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                  </svg>
+                </div>
                 <span class="btn-text">
                   <strong>Сбросить к образцу</strong>
-                  <small>Восстановить демонстрационные оценки</small>
+                  <small>Восстановить исходные оценки Андрея и Кати</small>
                 </span>
               </button>
             </div>
           </div>
 
           <div class="settings-footer-info">
-            <p>STIX LAB — Создано для совместных моментов Андрея и Кати ❤️</p>
-            <p class="copyright">Работает оффлайн и сохраняет всё в браузере</p>
+            <p>STIX LAB — Разработано специально для Андрея и Кати ❤️</p>
+            <p class="copyright">Работает автономно, без интернета, данные хранятся на устройстве</p>
           </div>
         </div>
       </div>
@@ -267,6 +450,7 @@
 
     <!-- Toast Notification -->
     <div class="toast-notice" id="toastNotice" role="status" aria-live="polite">
+      <div class="toast-icon" id="toastIcon">✨</div>
       <span id="toastMessage">Сохранено</span>
     </div>
   </div>
